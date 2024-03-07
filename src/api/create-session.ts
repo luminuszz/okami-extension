@@ -12,5 +12,14 @@ export type CreateSessionInput = z.infer<typeof createSessionInputSchema>
 export async function createSession(payload: CreateSessionInput) {
   const parsed = createSessionInputSchema.parse(payload)
 
-  await okamiHttpGateway.post<{ token: string }>('/auth/login-mobile', parsed)
+  const response = await okamiHttpGateway.post<{ token: string }>(
+    '/auth/login-mobile',
+    parsed,
+  )
+
+  const { token } = response.data
+
+  return {
+    token,
+  }
 }

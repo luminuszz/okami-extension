@@ -1,33 +1,26 @@
-import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
+import { useEffect } from 'react'
 
-import { isUnauthorizedError, okamiHttpGateway } from './lib/axios'
-import { MarkWorkRead } from './pages/mark-work-read'
+import { AuthProvider } from './components/auth-provider'
+import { Button } from './components/ui/button'
+import { Router } from './Router'
 
 export function App() {
-  const [isLogged, setIsLogged] = useState(false)
-
   useEffect(() => {
     const root = window.document.documentElement
 
     root.classList.add('dark')
-
-    const interceptorId = okamiHttpGateway.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        const canRedirectToLogin = isUnauthorizedError(error)
-
-        if (canRedirectToLogin) {
-          setIsLogged(false)
-        }
-
-        return Promise.reject(error)
-      },
-    )
-
-    return () => {
-      okamiHttpGateway.interceptors.response.eject(interceptorId)
-    }
   }, [])
 
-  return isLogged ? <MarkWorkRead /> : <h1>Not logged in</h1>
+  return (
+    <AuthProvider>
+      <div className="flex items-start justify-end">
+        <Button variant="ghost" size="icon">
+          <X onClick={() => window.close()} />
+        </Button>
+      </div>
+
+      <Router />
+    </AuthProvider>
+  )
 }
