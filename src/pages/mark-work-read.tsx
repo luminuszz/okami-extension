@@ -10,6 +10,7 @@ import {
   WorkType,
 } from '@/api/fetch-for-works-with-filter'
 import { markWorkAsRead } from '@/api/mark-work-as-read'
+import { updateWorkChapterCall } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
 import { Button } from '@/components/ui/button'
@@ -26,8 +27,9 @@ import { getCurrentTab, search } from '@/lib/utils'
 
 const formSchema = z.object({
   workId: z.string(),
-  nextChapter: z.coerce.number(),
+  chapter: z.coerce.number(),
   imageUrl: z.string().optional(),
+  hasNewChapter: z.boolean().optional(),
 })
 
 type FormSchema = z.infer<typeof formSchema>
@@ -47,14 +49,22 @@ export function MarkWorkRead() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       workId: '',
-      nextChapter: 0,
+      chapter: 0,
       imageUrl: '',
     },
   })
 
-  async function handleMarkWorkUnread({ workId, nextChapter }: FormSchema) {
+  async function handleMarkWorkUnread({
+    workId,
+    chapter,
+    hasNewChapter,
+  }: FormSchema) {
     try {
-      await markWorkAsRead({ workId, chapter: nextChapter })
+      if (hasNewChapter) {
+        await markWorkAsRead({ workId, chapter })
+      } else {
+        await updateWorkChapterCall({ chapter, workId })
+      }
     } catch (error) {
       console.error('Error marking work as read', error)
     }
@@ -62,11 +72,20 @@ export function MarkWorkRead() {
 
   const imageUrl = watch('imageUrl')
 
+  const hasNewChapter = watch('hasNewChapter')
+
+  function resetFormStatusWithNewWork(work: WorkType) {
+    reset({
+      workId: work?.id || '',
+      chapter: work.nextChapter ?? work.chapter,
+      imageUrl: work?.imageUrl || '',
+      hasNewChapter: work?.hasNewChapter,
+    })
+  }
+
   useEffect(() => {
-    fetchWorksWithFilter({ status: 'unread' })
-      .then((works) => {
-        setWorks(works)
-      })
+    fetchWorksWithFilter()
+      .then((works) => setWorks(works))
       .catch((error) => {
         console.error('Error fetching works', error)
       })
@@ -80,11 +99,9 @@ export function MarkWorkRead() {
 
       const work = find(works, { name: firsTWorkMatchToTitle ?? '' }) ?? null
 
-      reset({
-        workId: work?.id || '',
-        nextChapter: work?.nextChapter || 0,
-        imageUrl: work?.imageUrl || '',
-      })
+      if (work) {
+        resetFormStatusWithNewWork(work)
+      }
     })
   }, [works])
 
@@ -117,16 +134,12 @@ export function MarkWorkRead() {
                 onValueChange={(value) => {
                   const work = find(works, { id: value })
                   if (work) {
-                    reset({
-                      imageUrl: work?.imageUrl ?? '',
-                      nextChapter: work?.nextChapter ?? 0,
-                      workId: work.id,
-                    })
+                    resetFormStatusWithNewWork(work)
                   }
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={'Selecione a obra'} />
+                  <SelectValue placeholder="Selecione a obra" />
                 </SelectTrigger>
 
                 <SelectContent>
@@ -143,16 +156,23 @@ export function MarkWorkRead() {
           />
 
           <Label>Capitulo/Episodio</Label>
-          <Input {...register('nextChapter')} type="number" placeholder="0" />
+          <Input {...register('chapter')} type="number" placeholder="0" />
 
-          <Button type="submit" disabled={isSubmitting}>
+          <Button
+            data-isSuccess={isSubmitSuccessful}
+            type="submit"
+            disabled={isSubmitting}
+            className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
+          >
             {isSubmitSuccessful ? (
               <>
-                <Check className="mr-2 size-4 text-muted-foreground" /> Obra
-                marcada como lida !
+                <Check className="mr-2 size-4 text-gray-100" /> Obra atualizada
+                com sucesso
               </>
+            ) : hasNewChapter ? (
+              'Marcar como lido'
             ) : (
-              'Marcar como lida'
+              'Atualizar capitulo'
             )}
           </Button>
         </form>
