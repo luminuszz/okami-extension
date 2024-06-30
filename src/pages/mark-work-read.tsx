@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { filter, find, map } from 'lodash'
 import { Check } from 'lucide-react'
-import { useCallback, useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -15,8 +15,8 @@ import { markWorkAsRead } from '@/api/mark-work-as-read'
 import { updateWorkChapterCall } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
+import { NumberInput } from '@/components/number-input.tsx'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -25,11 +25,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getCurrentTab, search } from '@/lib/utils'
+import {
+  getCurrentTab,
+  hasExceededMaxFractionDigits,
+  search,
+} from '@/lib/utils'
 
 const formSchema = z.object({
   workId: z.string(),
-  chapter: z.coerce.number(),
+  chapter: z.coerce
+    .number({
+      invalid_type_error: 'Informe um número válido',
+      required_error: 'O capitulo/episodio é obrigatório',
+    })
+    .min(0, 'O capitulo/episodio não pode ser menor que 0')
+    .refine((value) => !hasExceededMaxFractionDigits(value, 2), {
+      message: 'O capitulo/episodio não pode ter mais de 2 casas decimais',
+    }),
   imageUrl: z.string().optional(),
   hasNewChapter: z.boolean().optional(),
 })
@@ -41,13 +53,17 @@ export function MarkWorkRead() {
   const { notifications } = useGetRecentNotifications()
   const { works } = useFetchWorksWithFilter()
 
+  const worksOnGoing = useMemo(
+    () => filter(works, { isFinished: false }),
+    [works],
+  )
+
   const {
-    register,
     control,
     reset,
     watch,
     handleSubmit,
-    formState: { isSubmitting, isSubmitSuccessful },
+    formState: { isSubmitting, isSubmitSuccessful, errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -58,7 +74,7 @@ export function MarkWorkRead() {
   })
 
   function markNotificationWorkAsRead(workId: string) {
-    const work = find(works, { id: workId })
+    const work = find(worksOnGoing, { id: workId })
 
     if (!work) return
 
@@ -94,31 +110,29 @@ export function MarkWorkRead() {
   const imageUrl = watch('imageUrl')
   const hasNewChapter = watch('hasNewChapter')
 
-  const resetFormStatusWithNewWork = useCallback(
-    (work: WorkType) => {
-      reset({
-        workId: work?.id || '',
-        chapter: work.nextChapter ?? work.chapter,
-        imageUrl: work?.imageUrl || '',
-        hasNewChapter: work?.hasNewChapter,
-      })
-    },
-    [reset],
-  )
+  const setCurrentWorkToFormState = (work: WorkType) => {
+    reset({
+      workId: work?.id || '',
+      chapter: work.nextChapter ?? work.chapter,
+      imageUrl: work?.imageUrl || '',
+      hasNewChapter: work?.hasNewChapter,
+    })
+  }
 
   useEffect(() => {
     getCurrentTab().then((tabTitle) => {
-      const worksNames = map(filter(works, { isFinished: false }), 'name')
+      const worksNames = map(worksOnGoing, 'name')
 
       const firsTWorkMatchToTitle = search(worksNames, tabTitle)
 
-      const work = find(works, { name: firsTWorkMatchToTitle ?? '' }) ?? null
+      const work =
+        find(worksOnGoing, { name: firsTWorkMatchToTitle ?? '' }) ?? null
 
       if (work) {
-        resetFormStatusWithNewWork(work)
+        setCurrentWorkToFormState(work)
       }
     })
-  }, [resetFormStatusWithNewWork, works])
+  }, [worksOnGoing])
 
   if (isLoading) {
     return <Container>Carregando...</Container>
@@ -147,9 +161,10 @@ export function MarkWorkRead() {
               <Select
                 value={field.value}
                 onValueChange={(value) => {
-                  const work = find(works, { id: value })
+                  const work = find(worksOnGoing, { id: value })
+
                   if (work) {
-                    resetFormStatusWithNewWork(work)
+                    setCurrentWorkToFormState(work)
                   }
                 }}
               >
@@ -158,7 +173,7 @@ export function MarkWorkRead() {
                 </SelectTrigger>
 
                 <SelectContent>
-                  {works.map((work) => {
+                  {worksOnGoing.map((work) => {
                     return (
                       <SelectItem key={work.id} value={work.id}>
                         {work.name}
@@ -171,7 +186,29 @@ export function MarkWorkRead() {
           />
 
           <Label>Capitulo/Episodio</Label>
-          <Input {...register('chapter')} type="number" placeholder="0" />
+
+          <Controller
+            render={({ field }) => (
+              <>
+                <NumberInput
+                  onChange={field.onChange}
+                  value={field.value}
+                  min={0}
+                  onBlur={field.onBlur}
+                  disabled={field.disabled}
+                  placeholder="120"
+                />
+
+                {errors.chapter && (
+                  <span className="mt-1 text-red-600">
+                    {errors.chapter.message}
+                  </span>
+                )}
+              </>
+            )}
+            name="chapter"
+            control={control}
+          />
 
           <Button
             data-isSuccess={isSubmitSuccessful}

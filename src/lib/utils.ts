@@ -48,3 +48,12 @@ export function search(listObj: string[], nameRef: string) {
 
   return results.originalName
 }
+
+export function hasExceededMaxFractionDigits(
+  num: number,
+  maxFractionDigits: number,
+): boolean {
+  const fractionPart = num.toString().split('.')[1]
+
+  return !!fractionPart && fractionPart.length > maxFractionDigits
+}
