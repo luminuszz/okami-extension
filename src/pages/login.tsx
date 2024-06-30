@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useEffect } from 'react'
+import { AxiosError } from 'axios'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -11,14 +11,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const formSchema = z.object({
-  email: z
-    .string({ invalid_type_error: 'Invalido', required_error: 'Obrigatório' })
-    .email('E-mail inválido')
-    .trim(),
-  password: z.string({
-    required_error: 'Campo obrigatório',
-    invalid_type_error: 'Invalido',
-  }),
+  email: z.preprocess(
+    (val) => String(val).trim(),
+    z
+      .string({
+        invalid_type_error: 'Invalido',
+        required_error: 'Obrigatório',
+      })
+      .email("'E-mail inválido'"),
+  ),
+  password: z
+    .string({
+      required_error: 'Campo obrigatório',
+      invalid_type_error: 'Invalido',
+    })
+    .min(8, 'Informe uma senha válida'),
 })
 
 type FormSchema = z.infer<typeof formSchema>
@@ -38,22 +45,17 @@ export function Login() {
     },
   })
 
-  useEffect(() => {
-    if (errors) {
-      alert('Erro ao fazer login ' + JSON.stringify(errors))
-    }
-  }, [errors])
-
   async function handleLogin({ email, password }: FormSchema) {
     try {
-      alert('Fazendo login ')
       const { token } = await createSession({ email, password })
 
       await chrome.storage.local.set({ token })
 
       setToken(token)
     } catch (error) {
-      alert('Erro ao fazer login ' + JSON.stringify(error))
+      if (error instanceof AxiosError) {
+        alert(`Houve um erro ao fazer login: ${error.response?.data?.message}`)
+      }
     }
   }
 
@@ -68,11 +70,20 @@ export function Login() {
         </picture>
 
         <Input placeholder="E-mail" {...register('email')} />
+        {errors?.email && (
+          <span className="text-sm text-red-600">{errors.email.message}</span>
+        )}
         <Input
           placeholder="Password"
           type="password"
           {...register('password')}
         />
+
+        {errors?.password && (
+          <span className="text-sm text-red-600">
+            {errors.password.message}
+          </span>
+        )}
 
         <Button type="submit" disabled={isSubmitting}>
           Login
