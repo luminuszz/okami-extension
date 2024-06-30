@@ -1,4 +1,4 @@
-import { type ClassValue, clsx } from 'clsx' // eslint-disable-line
+import { clsx, type ClassValue } from 'clsx'; // eslint-disable-line
 import { twMerge } from 'tailwind-merge'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment, @typescript-eslint/no-var-requires
 

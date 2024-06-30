@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
@@ -37,4 +38,22 @@ export async function fetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
   })
 
   return fetchWorksWithFilterOutputSchema.parse(data)
+}
+
+export function useFetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
+  const [works, setWorks] = useState<WorkType[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+
+  useEffect(() => {
+    setIsLoading(true)
+    fetchWorksWithFilter(filter)
+      .then(setWorks)
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
+  }, [filter])
+
+  return {
+    works,
+    isLoading,
+  }
 }

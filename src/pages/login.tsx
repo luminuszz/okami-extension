@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const formSchema = z.object({
-  email: z.string().email('E-mail inválido'),
+  email: z.string().email('E-mail inválido').trim(),
   password: z.string({ required_error: 'Campo obrigatório' }),
 })
 

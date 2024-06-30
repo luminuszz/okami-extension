@@ -1,14 +1,16 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { find, map } from 'lodash'
 import { Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import {
-  fetchWorksWithFilter,
+  useFetchWorksWithFilter,
   WorkType,
 } from '@/api/fetch-for-works-with-filter'
+import { useGetRecentNotifications } from '@/api/get-recent-notifications.ts'
+import { markNotificationAsRead } from '@/api/mark-notification-as-read.ts'
 import { markWorkAsRead } from '@/api/mark-work-as-read'
 import { updateWorkChapterCall } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
@@ -36,7 +38,8 @@ type FormSchema = z.infer<typeof formSchema>
 
 export function MarkWorkRead() {
   const { isLoading } = useAuth()
-  const [works, setWorks] = useState<WorkType[]>([])
+  const { notifications } = useGetRecentNotifications()
+  const { works } = useFetchWorksWithFilter()
 
   const {
     register,
@@ -54,6 +57,22 @@ export function MarkWorkRead() {
     },
   })
 
+  function markNotificationWorkAsRead(workId: string) {
+    const work = works.find((work) => work.id === workId)
+
+    if (!work) return
+
+    const workNotification = notifications.find(
+      (nt) => nt.content.name === work.name,
+    )
+
+    if (!workNotification) return
+
+    markNotificationAsRead(workNotification.id).then(() => {
+      console.log('Notification marked as read')
+    })
+  }
+
   async function handleMarkWorkUnread({
     workId,
     chapter,
@@ -62,6 +81,7 @@ export function MarkWorkRead() {
     try {
       if (hasNewChapter) {
         await markWorkAsRead({ workId, chapter })
+        markNotificationWorkAsRead(workId)
       } else {
         await updateWorkChapterCall({ chapter, workId })
       }
@@ -74,22 +94,17 @@ export function MarkWorkRead() {
 
   const hasNewChapter = watch('hasNewChapter')
 
-  function resetFormStatusWithNewWork(work: WorkType) {
-    reset({
-      workId: work?.id || '',
-      chapter: work.nextChapter ?? work.chapter,
-      imageUrl: work?.imageUrl || '',
-      hasNewChapter: work?.hasNewChapter,
-    })
-  }
-
-  useEffect(() => {
-    fetchWorksWithFilter()
-      .then((works) => setWorks(works))
-      .catch((error) => {
-        console.error('Error fetching works', error)
+  const resetFormStatusWithNewWork = useCallback(
+    (work: WorkType) => {
+      reset({
+        workId: work?.id || '',
+        chapter: work.nextChapter ?? work.chapter,
+        imageUrl: work?.imageUrl || '',
+        hasNewChapter: work?.hasNewChapter,
       })
-  }, [])
+    },
+    [reset],
+  )
 
   useEffect(() => {
     getCurrentTab().then((tab) => {
@@ -103,7 +118,7 @@ export function MarkWorkRead() {
         resetFormStatusWithNewWork(work)
       }
     })
-  }, [works])
+  }, [resetFormStatusWithNewWork, works])
 
   if (isLoading) {
     return <Container>Carregando...</Container>
