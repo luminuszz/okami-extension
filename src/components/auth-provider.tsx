@@ -1,4 +1,10 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import {
+  createContext,
+  ReactNode,
+  useContext,
+  useEffect,
+  useState,
+} from 'react'
 
 import { isUnauthorizedError, okamiHttpGateway } from '@/lib/axios'
 
@@ -12,7 +18,7 @@ interface AuthContextProps {
 const AuthContext = createContext({} as AuthContextProps)
 
 interface AuthProviderProps {
-  children: React.ReactNode
+  children: ReactNode
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {

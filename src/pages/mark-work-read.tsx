@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { find, map } from 'lodash'
+import { filter, find, map } from 'lodash'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -58,17 +58,18 @@ export function MarkWorkRead() {
   })
 
   function markNotificationWorkAsRead(workId: string) {
-    const work = works.find((work) => work.id === workId)
+    const work = find(works, { id: workId })
 
     if (!work) return
 
-    const workNotification = notifications.find(
-      (nt) => nt.content.name === work.name,
+    const notification = find(
+      notifications,
+      ({ content }) => content.name === work.name,
     )
 
-    if (!workNotification) return
+    if (!notification) return
 
-    markNotificationAsRead(workNotification.id).then(() => {
+    markNotificationAsRead(notification.id).then(() => {
       console.log('Notification marked as read')
     })
   }
@@ -91,7 +92,6 @@ export function MarkWorkRead() {
   }
 
   const imageUrl = watch('imageUrl')
-
   const hasNewChapter = watch('hasNewChapter')
 
   const resetFormStatusWithNewWork = useCallback(
@@ -107,10 +107,10 @@ export function MarkWorkRead() {
   )
 
   useEffect(() => {
-    getCurrentTab().then((tab) => {
-      const data = map(works, (work) => ({ id: work.id, name: work.name }))
+    getCurrentTab().then((tabTitle) => {
+      const worksNames = map(filter(works, { isFinished: false }), 'name')
 
-      const firsTWorkMatchToTitle = search(data, tab)
+      const firsTWorkMatchToTitle = search(worksNames, tabTitle)
 
       const work = find(works, { name: firsTWorkMatchToTitle ?? '' }) ?? null
 
