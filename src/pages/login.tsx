@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -10,8 +11,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
 const formSchema = z.object({
-  email: z.string().email('E-mail inválido').trim(),
-  password: z.string({ required_error: 'Campo obrigatório' }),
+  email: z
+    .string({ invalid_type_error: 'Invalido', required_error: 'Obrigatório' })
+    .email('E-mail inválido')
+    .trim(),
+  password: z.string({
+    required_error: 'Campo obrigatório',
+    invalid_type_error: 'Invalido',
+  }),
 })
 
 type FormSchema = z.infer<typeof formSchema>
@@ -22,7 +29,7 @@ export function Login() {
   const {
     register,
     handleSubmit,
-    formState: { isSubmitting },
+    formState: { isSubmitting, errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
     values: {
@@ -30,6 +37,12 @@ export function Login() {
       password: '',
     },
   })
+
+  useEffect(() => {
+    if (errors) {
+      alert('Erro ao fazer login ' + JSON.stringify(errors))
+    }
+  }, [errors])
 
   async function handleLogin({ email, password }: FormSchema) {
     try {
