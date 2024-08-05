@@ -5,6 +5,7 @@ import { okamiHttpGateway } from '@/lib/axios'
 
 const fetchWorksWithFilterSchema = z.object({
   status: z.enum(['unread', 'read', 'dropped', 'finished']).nullable(),
+  search: z.string().optional().nullable(),
 })
 
 type FetchWorksWithFilterInput = z.infer<typeof fetchWorksWithFilterSchema>
@@ -26,6 +27,7 @@ export const workSchema = z.object({
   nextChapter: z.number().nullable(),
   isDropped: z.boolean(),
   createdAt: z.string(),
+  alternativeName: z.string().optional().nullable(),
 })
 
 const fetchWorksWithFilterOutputSchema = z.array(workSchema)

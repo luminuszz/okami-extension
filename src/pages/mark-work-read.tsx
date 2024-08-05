@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { filter, find, map } from 'lodash'
+import { filter, find, flatMap } from 'lodash'
 import { Check } from 'lucide-react'
 import { useEffect, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
@@ -121,12 +121,19 @@ export function MarkWorkRead() {
 
   useEffect(() => {
     getCurrentTab().then((tabTitle) => {
-      const worksNames = map(worksOnGoing, 'name')
+      const worksNames = flatMap(worksOnGoing, (work) => [
+        work.name,
+        work.alternativeName ?? '',
+      ])
 
       const firsTWorkMatchToTitle = search(worksNames, tabTitle)
 
       const work =
-        find(worksOnGoing, { name: firsTWorkMatchToTitle ?? '' }) ?? null
+        find(worksOnGoing, (work) => {
+          return [work.name, work.alternativeName].includes(
+            firsTWorkMatchToTitle,
+          )
+        }) ?? null
 
       if (work) {
         setCurrentWorkToFormState(work)
