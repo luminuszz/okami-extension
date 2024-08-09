@@ -11,6 +11,7 @@ export const notificationSchema = z.object({
     name: z.string(),
     url: z.string(),
     nextChapter: z.number(),
+    workId: z.string().optional(),
   }),
   createdAt: z.string(),
   id: z.string(),
@@ -36,7 +37,7 @@ export function useGetRecentNotifications() {
     setIsLoading(true)
     getRecentNotifications()
       .then(setNotifications)
-      .catch(console.error)
+      .catch((error) => alert(JSON.stringify(error)))
       .finally(() => setIsLoading(false))
   }, [])
 

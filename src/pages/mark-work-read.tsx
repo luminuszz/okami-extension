@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { filter, find, flatMap } from 'lodash'
 import { Check } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useEffect, useMemo } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -11,7 +11,7 @@ import {
 } from '@/api/fetch-for-works-with-filter'
 import { useGetRecentNotifications } from '@/api/get-recent-notifications.ts'
 import { markNotificationAsRead } from '@/api/mark-notification-as-read.ts'
-import { markWorkAsRead } from '@/api/mark-work-as-read'
+import { markWorkAsRead } from '@/api/mark-work-as-read.ts'
 import { updateWorkChapterCall } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
@@ -80,14 +80,18 @@ export function MarkWorkRead() {
 
     const notification = find(
       notifications,
-      ({ content }) => content.name === work.name,
+      ({ content }) => content.workId === workId,
     )
 
     if (!notification) return
 
-    markNotificationAsRead(notification.id).then(() => {
-      console.log('Notification marked as read')
-    })
+    markNotificationAsRead(notification.id)
+      .then(() => {
+        console.log('Notification marked as read')
+      })
+      .catch((error) => {
+        alert('error ' + error?.message)
+      })
   }
 
   async function handleMarkWorkUnread({
@@ -110,14 +114,17 @@ export function MarkWorkRead() {
   const imageUrl = watch('imageUrl')
   const hasNewChapter = watch('hasNewChapter')
 
-  const setCurrentWorkToFormState = (work: WorkType) => {
-    reset({
-      workId: work?.id || '',
-      chapter: work.nextChapter ?? work.chapter,
-      imageUrl: work?.imageUrl || '',
-      hasNewChapter: work?.hasNewChapter,
-    })
-  }
+  const setCurrentWorkToFormState = useCallback(
+    (work: WorkType) => {
+      reset({
+        workId: work?.id || '',
+        chapter: work.nextChapter ?? work.chapter,
+        imageUrl: work?.imageUrl || '',
+        hasNewChapter: work?.hasNewChapter,
+      })
+    },
+    [reset],
+  )
 
   useEffect(() => {
     getCurrentTab().then((tabTitle) => {
@@ -139,7 +146,7 @@ export function MarkWorkRead() {
         setCurrentWorkToFormState(work)
       }
     })
-  }, [worksOnGoing])
+  }, [setCurrentWorkToFormState, worksOnGoing])
 
   if (isLoading) {
     return <Container>Carregando...</Container>
