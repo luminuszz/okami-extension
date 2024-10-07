@@ -26,4 +26,8 @@ dist-ssr
 
 # Files
 
+# OS generated files
+
+dist
+
 .env

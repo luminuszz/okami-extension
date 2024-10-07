@@ -37,7 +37,6 @@ export function useGetRecentNotifications() {
     setIsLoading(true)
     getRecentNotifications()
       .then(setNotifications)
-      .catch((error) => alert(JSON.stringify(error)))
       .finally(() => setIsLoading(false))
   }, [])
 

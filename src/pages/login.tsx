@@ -54,7 +54,9 @@ export function Login() {
       setToken(token)
     } catch (error) {
       if (error instanceof AxiosError) {
-        alert(`Houve um erro ao fazer login: ${error.response?.data?.message}`)
+        console.log(
+          `Houve um erro ao fazer login: ${error.response?.data?.message}`,
+        )
       }
     }
   }

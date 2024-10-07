@@ -90,7 +90,7 @@ export function MarkWorkRead() {
         console.log('Notification marked as read')
       })
       .catch((error) => {
-        alert('error ' + error?.message)
+        console.log('Error marking notification as read', error)
       })
   }
 
