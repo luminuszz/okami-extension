@@ -47,9 +47,9 @@ export function Login() {
 
   async function handleLogin({ email, password }: FormSchema) {
     try {
-      const { token } = await createSession({ email, password })
+      const { token, refreshToken } = await createSession({ email, password })
 
-      await chrome.storage.local.set({ token })
+      await chrome.storage.local.set({ token, refreshToken })
 
       setToken(token)
     } catch (error) {
