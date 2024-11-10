@@ -30,3 +30,20 @@ export const useLocalStorage = <T>(
 export const localStorageTokens = {
   authToken: 'okami@authToken',
 } as const
+
+export interface GetTokensFromStorageResult {
+  token: string
+  refreshToken: string
+}
+
+export const getTokensByExtensionStorage =
+  async (): Promise<GetTokensFromStorageResult> => {
+    return await new Promise((resolve) => {
+      chrome.storage.local.get(
+        ['token', 'refreshToken'],
+        ({ token, refreshToken }) => {
+          resolve({ token, refreshToken })
+        },
+      )
+    })
+  }
