@@ -47,3 +47,11 @@ export const getTokensByExtensionStorage =
       )
     })
   }
+
+
+
+  export const deleteTokensFromStorage = async () => {
+    return await new Promise((resolve) => {
+      chrome.storage.local.remove(['token', 'refreshToken'], () =>  resolve)
+    })
+  }

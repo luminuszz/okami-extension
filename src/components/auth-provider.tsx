@@ -2,11 +2,13 @@ import {
   createContext,
   ReactNode,
   useContext,
-  useEffect,
+  useEffect, useMemo,
   useState,
 } from 'react'
 
-import { getTokensByExtensionStorage } from '@/lib/storage'
+import { deleteTokensFromStorage, getTokensByExtensionStorage } from '@/lib/storage'
+import { eventBridge } from '@/lib/events.ts'
+
 
 interface AuthContextProps {
   token: string
@@ -23,18 +25,17 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [token, setToken] = useState('')
+  const [refreshToken, setRefreshToken] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const isLogged = !!token
+  const isLogged = useMemo(() =>  !!refreshToken , [refreshToken])
 
   useEffect(() => {
     setIsLoading(true)
-
     getTokensByExtensionStorage()
       .then(({ token, refreshToken }) => {
-        const canSetToken = token && refreshToken
-
-        setToken(canSetToken ? token : '')
+        setToken(token ?? "")
+        setRefreshToken(refreshToken ?? "")
       })
       .catch(() => {
         setToken('')
@@ -43,6 +44,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setIsLoading(false)
       })
   }, [])
+
+
+  useEffect(() => {
+  const unsubscribe =  eventBridge.subscribe("user.isUnauthenticated", () => {
+    void deleteTokensFromStorage()
+    setToken("");
+    })
+
+
+    return () => {
+      unsubscribe()
+    }
+  }, [])
+
 
   return (
     <AuthContext.Provider value={{ token, setToken, isLogged, isLoading }}>
