@@ -2,7 +2,10 @@ import axios, { AxiosError } from 'axios'
 
 import { refreshTokenCall } from '@/api/refresh-token.ts'
 import { eventBridge } from '@/lib/events.ts'
-import { getTokensByExtensionStorage } from '@/lib/storage.ts'
+import {
+  deleteTokensFromStorage,
+  getTokensByExtensionStorage,
+} from '@/lib/storage.ts'
 
 export const okamiHttpGateway = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -58,7 +61,7 @@ okamiHttpGateway.interceptors.response.use(
           .catch((error) => {
             failRequestQueue.forEach((request) => {
               eventBridge.emit('user.isUnauthenticated')
-              chrome.storage.local.remove(['token', 'refreshToken'])
+              deleteTokensFromStorage()
               request.onFailure(error)
             })
           })

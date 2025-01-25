@@ -1,9 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { AxiosError } from 'axios'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 
-import { createSession } from '@/api/create-session'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
 import { Logo } from '@/components/logo'
@@ -31,7 +29,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>
 
 export function Login() {
-  const { setToken } = useAuth()
+  const { makeLogin } = useAuth()
 
   const {
     register,
@@ -45,28 +43,9 @@ export function Login() {
     },
   })
 
-  async function handleLogin({ email, password }: FormSchema) {
-    try {
-      const { token, refreshToken } = await createSession({ email, password })
-
-      await chrome.storage.local.set({ token, refreshToken })
-
-      setToken(token)
-    } catch (error) {
-      if (error instanceof AxiosError) {
-        console.log(
-          `Houve um erro ao fazer login: ${error.response?.data?.message}`,
-        )
-      }
-    }
-  }
-
   return (
     <Container>
-      <form
-        onSubmit={handleSubmit(handleLogin)}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={handleSubmit(makeLogin)} className="flex flex-col gap-4">
         <picture className="flex justify-center">
           <Logo className="size-28" />
         </picture>

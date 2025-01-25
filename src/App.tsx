@@ -5,7 +5,6 @@ import { AuthProvider } from './components/auth-provider'
 import { Button } from './components/ui/button'
 import { Router } from './Router'
 
-
 export function App() {
   useEffect(() => {
     const root = window.document.documentElement

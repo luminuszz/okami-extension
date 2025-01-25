@@ -48,10 +48,17 @@ export const getTokensByExtensionStorage =
     })
   }
 
+export const deleteTokensFromStorage = async () => {
+  return await new Promise((resolve) => {
+    chrome.storage.local.remove(['token', 'refreshToken'], () => resolve(true))
+  })
+}
 
-
-  export const deleteTokensFromStorage = async () => {
-    return await new Promise((resolve) => {
-      chrome.storage.local.remove(['token', 'refreshToken'], () =>  resolve)
-    })
-  }
+export const setTokensInStorage = async (
+  token: string,
+  refreshToken: string,
+) => {
+  return await new Promise((resolve) => {
+    chrome.storage.local.set({ token, refreshToken }, () => resolve(true))
+  })
+}
