@@ -45,8 +45,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setIsLoading(true)
     getTokensByExtensionStorage()
       .then(({ token, refreshToken }) => {
-        setToken(token ?? '')
-        setRefreshToken(refreshToken ?? '')
+        console.log({ token, refreshToken })
+
+        setToken(token)
+        setRefreshToken(refreshToken)
+
+        setIsLogged(true)
       })
       .catch(() => {
         setToken('')
@@ -81,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setRefreshToken(refreshToken)
       setToken(token)
 
-      setIsLogged(!!token && !!refreshToken)
+      setIsLogged(true)
     } catch {
       alert('Erro ao fazer login')
     } finally {

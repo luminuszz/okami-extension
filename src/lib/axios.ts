@@ -23,6 +23,10 @@ let failRequestQueue: FailRequestQueue = []
 export const isUnauthorizedError = (error: AxiosError): boolean =>
   [401, 403].includes(error.response?.status || 0)
 
+export const isExpiredTokenError = (error: AxiosError): boolean => {
+  return isUnauthorizedError(error) && error.message === 'token expired'
+}
+
 okamiHttpGateway.interceptors.request.use(
   async (requestConfig) => {
     const { token } = await getTokensByExtensionStorage()
@@ -43,32 +47,31 @@ okamiHttpGateway.interceptors.request.use(
 okamiHttpGateway.interceptors.response.use(
   (response) => response,
   async (exception: AxiosError) => {
-    if (isUnauthorizedError(exception)) {
+    if (isExpiredTokenError(exception)) {
       getTokensByExtensionStorage().then(({ refreshToken }) => {
         const canStartRefreshTokenFlow = refreshToken && !isRefreshing
 
         if (canStartRefreshTokenFlow) {
           isRefreshing = true
+          refreshTokenCall(refreshToken)
+            .then(({ token }) => {
+              failRequestQueue.forEach((request) => {
+                chrome.storage.local.set({ token })
+                request.onSuccess(token)
+              })
+            })
+            .catch((error) => {
+              failRequestQueue.forEach((request) => {
+                eventBridge.emit('user.isUnauthenticated')
+                deleteTokensFromStorage()
+                request.onFailure(error)
+              })
+            })
+            .finally(() => {
+              isRefreshing = false
+              failRequestQueue = []
+            })
         }
-
-        refreshTokenCall(refreshToken)
-          .then(({ token }) => {
-            failRequestQueue.forEach((request) => {
-              chrome.storage.local.set({ token })
-              request.onSuccess(token)
-            })
-          })
-          .catch((error) => {
-            failRequestQueue.forEach((request) => {
-              eventBridge.emit('user.isUnauthenticated')
-              deleteTokensFromStorage()
-              request.onFailure(error)
-            })
-          })
-          .finally(() => {
-            isRefreshing = false
-            failRequestQueue = []
-          })
       })
     }
 
