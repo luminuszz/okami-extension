@@ -43,9 +43,16 @@ export function Login() {
     },
   })
 
+  function handleLogin(params: FormSchema) {
+    makeLogin(params)
+  }
+
   return (
     <Container>
-      <form onSubmit={handleSubmit(makeLogin)} className="flex flex-col gap-4">
+      <form
+        onSubmit={handleSubmit(handleLogin)}
+        className="flex flex-col gap-4"
+      >
         <picture className="flex justify-center">
           <Logo className="size-28" />
         </picture>

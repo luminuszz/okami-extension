@@ -42,7 +42,7 @@ const formSchema = z.object({
     .refine((value) => !hasExceededMaxFractionDigits(value, 2), {
       message: 'O capitulo/episodio não pode ter mais de 2 casas decimais',
     }),
-  imageUrl: z.string().optional(),
+  imageUrl: z.string().optional().default('/okami.png'),
   hasNewChapter: z.boolean().optional(),
 })
 
@@ -111,7 +111,7 @@ export function MarkWorkRead() {
     }
   }
 
-  const imageUrl = watch('imageUrl')
+  const [imageUrl, workId] = watch(['imageUrl', 'workId'])
   const hasNewChapter = watch('hasNewChapter')
 
   const setCurrentWorkToFormState = useCallback(
@@ -159,7 +159,7 @@ export function MarkWorkRead() {
           <img
             className="size-[200px] rounded-sm"
             alt="image"
-            src={imageUrl ?? '/okami-logo.svg'}
+            src={imageUrl || '/okami.png'}
           />
         </picture>
 
@@ -227,7 +227,7 @@ export function MarkWorkRead() {
           <Button
             data-isSuccess={isSubmitSuccessful}
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !workId}
             className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
           >
             {isSubmitSuccessful ? (

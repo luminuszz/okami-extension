@@ -28,37 +28,24 @@ export const useLocalStorage = <T>(
 }
 
 export const localStorageTokens = {
-  authToken: 'okami@authToken',
+  token: 'okami-extension@authToken',
+  refreshToken: 'okami-extension@refreshToken',
 } as const
 
 export interface GetTokensFromStorageResult {
-  token: string
-  refreshToken: string
+  refreshToken: string | null
 }
 
-export const getTokensByExtensionStorage =
-  async (): Promise<GetTokensFromStorageResult> => {
-    return await new Promise((resolve) => {
-      chrome.storage.local.get(
-        ['token', 'refreshToken'],
-        ({ token, refreshToken }) => {
-          resolve({ token, refreshToken })
-        },
-      )
-    })
+export const getTokensByExtensionStorage = (): GetTokensFromStorageResult => {
+  return {
+    refreshToken: localStorage.getItem(localStorageTokens.refreshToken) || null,
   }
-
-export const deleteTokensFromStorage = async () => {
-  return await new Promise((resolve) => {
-    chrome.storage.local.remove(['token', 'refreshToken'], () => resolve(true))
-  })
 }
 
-export const setTokensInStorage = async (
-  token: string,
-  refreshToken: string,
-) => {
-  return await new Promise((resolve) => {
-    chrome.storage.local.set({ token, refreshToken }, () => resolve(true))
-  })
+export const deleteTokensFromStorage = () => {
+  localStorage.removeItem(localStorageTokens.refreshToken)
+}
+
+export const setTokensInStorage = (refreshToken: string) => {
+  localStorage.setItem(localStorageTokens.refreshToken, refreshToken)
 }
