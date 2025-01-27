@@ -11,6 +11,7 @@ export class EventBridge {
   // eslint-disable-next-line @typescript-eslint/ban-types
   private subscribers: Map<Event, Function[]> = new Map()
 
+  // eslint-disable-next-line @typescript-eslint/ban-types
   subscribe(event: Event, callback: Function): UnsubscribeCallback {
     if (!this.subscribers.has(event)) {
       this.subscribers.set(event, [])
@@ -32,7 +33,7 @@ export class EventBridge {
     )
   }
 
-  emit(event: Event, ...args: any[]) {
+  emit(event: Event, ...args: unknown[]) {
     if (!this.subscribers.has(event)) {
       return
     }

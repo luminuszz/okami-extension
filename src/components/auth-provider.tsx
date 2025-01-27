@@ -8,6 +8,7 @@ import {
 } from 'react'
 
 import { createSession } from '@/api/create-session'
+import { eventBridge } from '@/lib/events'
 import { getTokensByExtensionStorage } from '@/lib/storage'
 
 export interface MarkLoginInput {
@@ -64,6 +65,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     [setIsLoading, setIsLogged],
   )
+
+  useEffect(() => {
+    const unsubscribe = eventBridge.subscribe('user.isUnauthenticated', () => {
+      setIsLogged(false)
+    })
+
+    return () => {
+      unsubscribe()
+    }
+  }, [])
 
   return (
     <AuthContext.Provider
