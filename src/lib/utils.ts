@@ -7,16 +7,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function isRunningAsExtension(): boolean {
+  return typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined'
+}
+
 export const getCurrentTab = async (): Promise<string> => {
   return new Promise((resolve) => {
+    if (!isRunningAsExtension()) {
+      return resolve('')
+    }
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0) {
-        const tabTitle = tabs[0].title ?? ''
-
-        resolve(tabTitle)
+      if (tabs.length > 0 && tabs[0].title) {
+        resolve(tabs[0].title)
+      } else {
+        resolve('')
       }
-
-      resolve('')
     })
   })
 }

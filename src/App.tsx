@@ -8,6 +8,7 @@ import { Router } from './Router'
 export function App() {
   useEffect(() => {
     const root = window.document.documentElement
+
     root.classList.add('dark')
   }, [])
 

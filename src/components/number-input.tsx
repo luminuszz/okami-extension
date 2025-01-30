@@ -31,7 +31,6 @@ export function NumberInput({
         maximumFractionDigits: 2,
         style: 'decimal',
       },
-
       disabled,
     }),
   )
@@ -39,8 +38,10 @@ export function NumberInput({
   const api = numberInput.connect(state, setState, normalizeProps)
 
   useEffect(() => {
-    api.setValue(value ?? 0)
-  }, [value])
+    if (value) {
+      api.setValue(value ?? 0)
+    }
+  }, [api, value])
 
   return (
     <Input {...api.getInputProps()} onBlur={onBlur} placeholder={placeholder} />

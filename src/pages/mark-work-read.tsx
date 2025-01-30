@@ -1,4 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
+import { ListCollection } from '@zag-js/collection'
 import { filter, find, flatMap } from 'lodash'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -25,11 +26,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  getCurrentTab,
-  hasExceededMaxFractionDigits,
-  search,
-} from '@/lib/utils'
+import { useGetCurrentTabTitle } from '@/hooks/useGetCurrentWorkByTabTitle'
+import { hasExceededMaxFractionDigits, search } from '@/lib/utils'
 
 const formSchema = z.object({
   workId: z.string(),
@@ -52,6 +50,7 @@ export function MarkWorkRead() {
   const { isLoading } = useAuth()
   const { notifications } = useGetRecentNotifications()
   const { works } = useFetchWorksWithFilter()
+  const currentTabTitle = useGetCurrentTabTitle()
 
   const worksOnGoing = useMemo(
     () => filter(works, { isFinished: false }),
@@ -127,30 +126,34 @@ export function MarkWorkRead() {
   )
 
   useEffect(() => {
-    getCurrentTab().then((tabTitle) => {
-      const worksNames = flatMap(worksOnGoing, (work) => [
-        work.name,
-        work.alternativeName ?? '',
-      ])
+    if (!currentTabTitle) return
 
-      const firsTWorkMatchToTitle = search(worksNames, tabTitle)
+    const worksNames = flatMap(worksOnGoing, (work) => [
+      work.name,
+      work.alternativeName ?? '',
+    ])
 
-      const work =
-        find(worksOnGoing, (work) => {
-          return [work.name, work.alternativeName].includes(
-            firsTWorkMatchToTitle,
-          )
-        }) ?? null
+    const firsTWorkMatchToTitle = search(worksNames, currentTabTitle)
 
-      if (work) {
-        setCurrentWorkToFormState(work)
-      }
-    })
-  }, [setCurrentWorkToFormState, worksOnGoing])
+    const work =
+      find(worksOnGoing, (work) => {
+        return [work.name, work.alternativeName].includes(firsTWorkMatchToTitle)
+      }) ?? null
+
+    if (work) {
+      setCurrentWorkToFormState(work)
+    }
+  }, [setCurrentWorkToFormState, worksOnGoing, currentTabTitle])
 
   if (isLoading) {
     return <Container>Carregando...</Container>
   }
+
+  const worksOnGoingCollection = new ListCollection({
+    items: worksOnGoing,
+    itemToValue: (item) => item.id,
+    itemToString: (item) => item.name,
+  })
 
   return (
     <Container>
@@ -175,7 +178,7 @@ export function MarkWorkRead() {
               <Select
                 value={field.value}
                 onValueChange={(value) => {
-                  const work = find(worksOnGoing, { id: value })
+                  const work = worksOnGoingCollection.find(value)
 
                   if (work) {
                     setCurrentWorkToFormState(work)
@@ -187,13 +190,11 @@ export function MarkWorkRead() {
                 </SelectTrigger>
 
                 <SelectContent>
-                  {worksOnGoing.map((work) => {
-                    return (
-                      <SelectItem key={work.id} value={work.id}>
-                        {work.name}
-                      </SelectItem>
-                    )
-                  })}
+                  {worksOnGoingCollection.items.map((work) => (
+                    <SelectItem key={work.id} value={work.id}>
+                      {work.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             )}
