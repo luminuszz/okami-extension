@@ -41,6 +41,17 @@ export const getTokensByExtensionStorage = (): GetTokensFromStorageResult => {
     refreshToken: localStorage.getItem(localStorageTokens.refreshToken) || null,
   }
 }
+export const getTokenFormOkamiIntegrationStorage =
+  async (): Promise<string> => {
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        localStorageTokens.refreshToken,
+        (result: { [key: string]: string }) => {
+          resolve(result[localStorageTokens.refreshToken] || '')
+        },
+      )
+    })
+  }
 
 export const deleteTokensFromStorage = () => {
   localStorage.removeItem(localStorageTokens.refreshToken)

@@ -1,12 +1,11 @@
 import axios, { AxiosError } from 'axios'
 
 import { refreshTokenCall } from '@/api/refresh-token'
+import { eventBridge } from '@/lib/events.ts'
 import {
   deleteTokensFromStorage,
   getTokensByExtensionStorage,
 } from '@/lib/storage.ts'
-
-import { eventBridge } from './events'
 
 export const okamiHttpGateway = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -28,12 +27,7 @@ export const isUnauthorizedError = (error: AxiosError): boolean =>
 export const isExpiredTokenError = (
   error: AxiosError<{ message: string }>,
 ): boolean => {
-  console.log(error.response?.data)
-
-  return (
-    isUnauthorizedError(error) &&
-    error.response?.data?.message === 'token expired'
-  )
+  return isUnauthorizedError(error)
 }
 
 okamiHttpGateway.interceptors.response.use(
@@ -59,6 +53,8 @@ okamiHttpGateway.interceptors.response.use(
             failRequestQueue.forEach((request) => {
               request.onFailure(error)
             })
+
+            eventBridge.emit('user.isUnauthenticated')
           })
           .finally(() => {
             isRefreshing = false
@@ -66,8 +62,6 @@ okamiHttpGateway.interceptors.response.use(
           })
       }
     } else {
-      eventBridge.emit('user.isUnauthenticated')
-
       return Promise.reject(exception)
     }
 

@@ -9,7 +9,11 @@ import {
 
 import { createSession } from '@/api/create-session'
 import { eventBridge } from '@/lib/events'
-import { getTokensByExtensionStorage } from '@/lib/storage'
+import {
+  getTokenFormOkamiIntegrationStorage,
+  getTokensByExtensionStorage,
+  setTokensInStorage,
+} from '@/lib/storage'
 
 export interface MarkLoginInput {
   email: string
@@ -21,6 +25,7 @@ interface AuthContextProps {
   isLoading: boolean
   setIsLogged: (isLogged: boolean) => void
   makeLogin: (values: MarkLoginInput) => void
+  checksTokenFromChromeStorage: () => Promise<void>
 }
 
 const AuthContext = createContext({} as AuthContextProps)
@@ -48,10 +53,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         setIsLoading(true)
 
-        await createSession({
+        const { refreshToken } = await createSession({
           email: values.email,
           password: values.password,
         })
+
+        setTokensInStorage(refreshToken)
 
         setIsLogged(true)
       } catch (e) {
@@ -66,6 +73,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
     [setIsLoading, setIsLogged],
   )
 
+  const checksTokenFromChromeStorage = useCallback(async () => {
+    try {
+      setIsLoading(true)
+
+      const { refreshToken } = getTokensByExtensionStorage()
+
+      if (refreshToken) {
+        console.log('refreshToken', refreshToken)
+        setIsLogged(true)
+
+        return
+      }
+
+      const refreshTokenFromStorage =
+        await getTokenFormOkamiIntegrationStorage()
+
+      if (refreshTokenFromStorage) {
+        console.log('refreshTokenFromStorage', refreshTokenFromStorage)
+        setTokensInStorage(refreshTokenFromStorage)
+        setIsLogged(true)
+      }
+    } catch (e) {
+      console.log(e)
+      setIsLogged(false)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [setIsLoading, setIsLogged])
+
   useEffect(() => {
     const unsubscribe = eventBridge.subscribe('user.isUnauthenticated', () => {
       setIsLogged(false)
@@ -78,7 +114,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider
-      value={{ isLogged, isLoading, setIsLogged, makeLogin }}
+      value={{
+        isLogged,
+        isLoading,
+        setIsLogged,
+        makeLogin,
+        checksTokenFromChromeStorage,
+      }}
     >
       {children}
     </AuthContext.Provider>

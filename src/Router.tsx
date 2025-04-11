@@ -1,12 +1,18 @@
 import { Loader } from 'lucide-react'
+import { useEffect } from 'react'
+
+import { LoginWithPlatform } from '@/pages/login-with-platform.tsx'
 
 import { useAuth } from './components/auth-provider'
 import { Container } from './components/container'
-import { Login } from './pages/login'
 import { MarkWorkRead } from './pages/mark-work-read'
 
 export function Router() {
-  const { isLoading, isLogged } = useAuth()
+  const { isLoading, isLogged, checksTokenFromChromeStorage } = useAuth()
+
+  useEffect(() => {
+    checksTokenFromChromeStorage().then()
+  }, [checksTokenFromChromeStorage])
 
   if (isLoading) {
     return (
@@ -18,5 +24,5 @@ export function Router() {
     )
   }
 
-  return isLogged ? <MarkWorkRead /> : <Login />
+  return isLogged ? <MarkWorkRead /> : <LoginWithPlatform />
 }

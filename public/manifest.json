@@ -19,5 +19,16 @@
   ],
   "action": {
     "default_popup": "index.html"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://okami.daviribeiro.com/*",
+        "http://localhost:5173/*"
+      ],
+      "js": ["token-script.js"],
+      "all_frames": true
+    }
+  ]
+
 }

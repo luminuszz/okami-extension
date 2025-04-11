@@ -3,6 +3,8 @@ import Levenshtein from 'fast-levenshtein'
 import { map, reduce } from 'lodash'
 import { twMerge } from 'tailwind-merge'
 
+import { localStorageTokens } from '@/lib/storage.ts'
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -62,4 +64,23 @@ export function hasExceededMaxFractionDigits(
   const fractionPart = num.toString().split('.')[1]
 
   return !!fractionPart && fractionPart.length > maxFractionDigits
+}
+
+export function listenForRefreshTokenByOkamiPlatform(
+  handler: (refreshToken: string | null) => void,
+) {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName === 'local') {
+      for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
+        if (key === localStorageTokens.refreshToken) {
+          console.log(`Refresh token changed.`)
+          console.log(`Old value: `, oldValue)
+          console.log(`New value: `, newValue)
+          handler(newValue)
+        }
+      }
+    }
+  })
+
+  return () => {}
 }
