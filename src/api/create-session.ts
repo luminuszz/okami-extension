@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
-import { setTokensInStorage } from '@/lib/storage'
+import { setJwtTokenInStorage, setTokensInStorage } from '@/lib/storage'
 
 const createSessionInputSchema = z.object({
   email: z.string().email(),
@@ -12,6 +12,7 @@ export type CreateSessionInput = z.infer<typeof createSessionInputSchema>
 
 export interface CreateSessionResponse {
   refreshToken: string
+  token: string
 }
 
 export async function createSession(payload: CreateSessionInput) {
@@ -22,9 +23,10 @@ export async function createSession(payload: CreateSessionInput) {
     parsed,
   )
 
-  const { refreshToken } = response.data
+  const { refreshToken, token } = response.data
 
   setTokensInStorage(refreshToken)
+  setJwtTokenInStorage(token)
 
   return {
     refreshToken,

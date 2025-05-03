@@ -5,11 +5,21 @@ import { eventBridge } from '@/lib/events.ts'
 import {
   deleteTokensFromStorage,
   getTokensByExtensionStorage,
+  setJwtTokenInStorage,
 } from '@/lib/storage.ts'
 
 export const okamiHttpGateway = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: true,
+})
+
+okamiHttpGateway.interceptors.request.use((req) => {
+  const { token } = getTokensByExtensionStorage()
+
+  if (req.headers && token) {
+    req.headers.Authorization = `Bearer ${token}`
+  }
+
+  return req
 })
 
 let isRefreshing = false
@@ -43,6 +53,9 @@ okamiHttpGateway.interceptors.response.use(
 
         refreshTokenCall(refreshToken)
           .then(({ token }) => {
+            setJwtTokenInStorage(token)
+            okamiHttpGateway.defaults.headers.Authorization = `Bearer ${token}`
+
             failRequestQueue.forEach((request) => {
               request.onSuccess(token)
             })
@@ -68,8 +81,10 @@ okamiHttpGateway.interceptors.response.use(
     return new Promise((resolve, reject) => {
       failRequestQueue.push({
         onFailure: (error) => reject(error),
-        onSuccess: async () => {
+        onSuccess: async (token) => {
           if (!exception.config?.headers) return
+
+          exception.config.headers.Authorization = `Bearer ${token}`
 
           return resolve(okamiHttpGateway(exception.config))
         },

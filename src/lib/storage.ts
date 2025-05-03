@@ -34,11 +34,13 @@ export const localStorageTokens = {
 
 export interface GetTokensFromStorageResult {
   refreshToken: string | null
+  token: string | null
 }
 
 export const getTokensByExtensionStorage = (): GetTokensFromStorageResult => {
   return {
     refreshToken: localStorage.getItem(localStorageTokens.refreshToken) || null,
+    token: localStorage.getItem(localStorageTokens.token) || null,
   }
 }
 export const getTokenFormOkamiIntegrationStorage =
@@ -59,4 +61,8 @@ export const deleteTokensFromStorage = () => {
 
 export const setTokensInStorage = (refreshToken: string) => {
   localStorage.setItem(localStorageTokens.refreshToken, refreshToken)
+}
+
+export const setJwtTokenInStorage = (token: string) => {
+  localStorage.setItem(localStorageTokens.token, token)
 }
