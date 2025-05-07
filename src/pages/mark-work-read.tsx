@@ -177,7 +177,6 @@ export function MarkWorkRead() {
             name="workId"
             render={({ field }) => (
               <Select
-                disabled={isLoadingWorks}
                 value={field.value}
                 onValueChange={(value) => {
                   const work = worksOnGoingCollection.find(value)
