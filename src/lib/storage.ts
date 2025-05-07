@@ -1,8 +1,14 @@
+export const localStorageKeys = {
+  token: 'okami-extension@authToken',
+  refreshToken: 'okami-extension@refreshToken',
+  worksOnGoingCache: 'okami-extension@worksOnGoingCache',
+} as const
+
 export const useLocalStorage = <T>(
-  keyName: keyof typeof localStorageTokens,
+  keyName: keyof typeof localStorageKeys,
   initialValue: T,
 ) => {
-  const key = localStorageTokens[keyName]
+  const key = localStorageKeys[keyName]
 
   const get = () => {
     const value = localStorage.getItem(key)
@@ -27,11 +33,6 @@ export const useLocalStorage = <T>(
   }
 }
 
-export const localStorageTokens = {
-  token: 'okami-extension@authToken',
-  refreshToken: 'okami-extension@refreshToken',
-} as const
-
 export interface GetTokensFromStorageResult {
   refreshToken: string | null
   token: string | null
@@ -39,30 +40,30 @@ export interface GetTokensFromStorageResult {
 
 export const getTokensByExtensionStorage = (): GetTokensFromStorageResult => {
   return {
-    refreshToken: localStorage.getItem(localStorageTokens.refreshToken) || null,
-    token: localStorage.getItem(localStorageTokens.token) || null,
+    refreshToken: localStorage.getItem(localStorageKeys.refreshToken) || null,
+    token: localStorage.getItem(localStorageKeys.token) || null,
   }
 }
 export const getTokenFormOkamiIntegrationStorage =
   async (): Promise<string> => {
     return new Promise((resolve) => {
       chrome.storage.local.get(
-        localStorageTokens.refreshToken,
+        localStorageKeys.refreshToken,
         (result: { [key: string]: string }) => {
-          resolve(result[localStorageTokens.refreshToken] || '')
+          resolve(result[localStorageKeys.refreshToken] || '')
         },
       )
     })
   }
 
 export const deleteTokensFromStorage = () => {
-  localStorage.removeItem(localStorageTokens.refreshToken)
+  localStorage.removeItem(localStorageKeys.refreshToken)
 }
 
 export const setTokensInStorage = (refreshToken: string) => {
-  localStorage.setItem(localStorageTokens.refreshToken, refreshToken)
+  localStorage.setItem(localStorageKeys.refreshToken, refreshToken)
 }
 
 export const setJwtTokenInStorage = (token: string) => {
-  localStorage.setItem(localStorageTokens.token, token)
+  localStorage.setItem(localStorageKeys.token, token)
 }

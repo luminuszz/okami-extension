@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
+import { localStorageKeys } from '@/lib/storage.ts'
 
 const fetchWorksWithFilterSchema = z.object({
   status: z.enum(['unread', 'read', 'dropped', 'finished']).nullable(),
@@ -43,13 +44,24 @@ export async function fetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
 }
 
 export function useFetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
-  const [works, setWorks] = useState<WorkType[]>([])
+  const [works, setWorks] = useState<WorkType[]>(() => {
+    const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
+    return cache ? (JSON.parse(cache) as WorkType[]) : []
+  })
+
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     setIsLoading(true)
     fetchWorksWithFilter(filter)
-      .then(setWorks)
+      .then((works = []) => {
+        localStorage.setItem(
+          localStorageKeys.worksOnGoingCache,
+          JSON.stringify(works),
+        )
+
+        setWorks(works)
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false))
   }, [filter])

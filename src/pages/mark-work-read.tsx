@@ -93,7 +93,7 @@ export function MarkWorkRead() {
       })
   }
 
-  async function handleMarkWorkUnread({
+  async function handleMarkWorkAsRead({
     workId,
     chapter,
     hasNewChapter,
@@ -168,7 +168,7 @@ export function MarkWorkRead() {
 
         <form
           className="flex w-[300px] flex-col gap-4 "
-          onSubmit={handleSubmit(handleMarkWorkUnread)}
+          onSubmit={handleSubmit(handleMarkWorkAsRead)}
         >
           <Label>Obra</Label>
           <Controller
