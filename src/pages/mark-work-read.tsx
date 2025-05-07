@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { ListCollection } from '@zag-js/collection'
+import { clsx } from 'clsx'
 import { filter, find, flatMap } from 'lodash'
 import { Check } from 'lucide-react'
 import { useCallback, useEffect, useMemo } from 'react'
@@ -49,7 +50,7 @@ type FormSchema = z.infer<typeof formSchema>
 export function MarkWorkRead() {
   const { isLoading } = useAuth()
   const { notifications } = useGetRecentNotifications()
-  const { works } = useFetchWorksWithFilter()
+  const { works, isLoading: isLoadingWorks } = useFetchWorksWithFilter()
   const currentTabTitle = useGetCurrentTabTitle()
 
   const worksOnGoing = useMemo(
@@ -176,6 +177,7 @@ export function MarkWorkRead() {
             name="workId"
             render={({ field }) => (
               <Select
+                disabled={isLoadingWorks}
                 value={field.value}
                 onValueChange={(value) => {
                   const work = worksOnGoingCollection.find(value)
@@ -185,7 +187,11 @@ export function MarkWorkRead() {
                   }
                 }}
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger
+                  className={clsx('w-full', {
+                    'animate-pulse': isLoadingWorks,
+                  })}
+                >
                   <SelectValue placeholder="Selecione a obra" />
                 </SelectTrigger>
 
