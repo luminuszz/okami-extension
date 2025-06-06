@@ -19,7 +19,7 @@ export async function createSession(payload: CreateSessionInput) {
   const parsed = createSessionInputSchema.parse(payload)
 
   const response = await okamiHttpGateway.post<CreateSessionResponse>(
-    '/auth/v2/login',
+    '/auth/v2/login/mobile',
     parsed,
   )
 

@@ -1,7 +1,7 @@
 import { Loader } from 'lucide-react'
 import { useEffect } from 'react'
 
-import { LoginWithPlatform } from '@/pages/login-with-platform.tsx'
+import { Login } from '@/pages/login.tsx'
 
 import { useAuth } from './components/auth-provider'
 import { Container } from './components/container'
@@ -24,5 +24,5 @@ export function Router() {
     )
   }
 
-  return isLogged ? <MarkWorkRead /> : <LoginWithPlatform />
+  return isLogged ? <MarkWorkRead /> : <Login />
 }
