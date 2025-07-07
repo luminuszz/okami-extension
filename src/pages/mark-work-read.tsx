@@ -1,9 +1,8 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { ListCollection } from '@zag-js/collection'
 import { clsx } from 'clsx'
-import { filter, find, flatMap } from 'lodash'
+import { find } from 'lodash'
 import { Check } from 'lucide-react'
-import { useCallback, useEffect, useMemo } from 'react'
+import { useCallback } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -11,14 +10,12 @@ import {
   useFetchWorksWithFilter,
   WorkType,
 } from '@/api/fetch-for-works-with-filter'
-import { useGetRecentNotifications } from '@/api/get-recent-notifications.ts'
-import { markNotificationAsRead } from '@/api/mark-notification-as-read.ts'
 import { useMarkWorkAsRead } from '@/api/mark-work-as-read.ts'
 import { useUpdateWorkChapter } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
-import { NumberInput } from '@/components/number-input.tsx'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input.tsx'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -27,20 +24,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { useGetCurrentTabTitle } from '@/hooks/useGetCurrentWorkByTabTitle'
-import { hasExceededMaxFractionDigits, search } from '@/lib/utils'
+import { useFindWorkByTabTitle } from '@/hooks/useFindWorkByTabTitle.ts'
+import { hasExceededMaxFractionDigits } from '@/lib/utils'
+
+const chapterNumberSchema = z.coerce
+  .number({
+    invalid_type_error: 'Informe um número válido',
+    required_error: 'O capitulo/episodio é obrigatório',
+  })
+  .min(0, 'O capitulo/episodio não pode ser menor que 0')
+  .refine((value) => !hasExceededMaxFractionDigits(value, 2), {
+    message: 'O capitulo/episodio não pode ter mais de 2 casas decimais',
+  })
 
 const formSchema = z.object({
   workId: z.string(),
-  chapter: z.coerce
-    .number({
-      invalid_type_error: 'Informe um número válido',
-      required_error: 'O capitulo/episodio é obrigatório',
-    })
-    .min(0, 'O capitulo/episodio não pode ser menor que 0')
-    .refine((value) => !hasExceededMaxFractionDigits(value, 2), {
-      message: 'O capitulo/episodio não pode ter mais de 2 casas decimais',
-    }),
+  chapter: chapterNumberSchema,
   imageUrl: z.string().optional().default('/okami.png'),
   hasNewChapter: z.boolean().optional(),
 })
@@ -49,16 +48,13 @@ type FormSchema = z.infer<typeof formSchema>
 
 export function MarkWorkRead() {
   const { isLoading } = useAuth()
-  const { notifications } = useGetRecentNotifications()
-  const { works, isLoading: isLoadingWorks } = useFetchWorksWithFilter()
-  const currentTabTitle = useGetCurrentTabTitle()
+  const { works: worksOnGoing, isLoading: isLoadingWorks } =
+    useFetchWorksWithFilter()
+
   const { updateWorkChapter } = useUpdateWorkChapter()
   const { markWorkAsRead } = useMarkWorkAsRead()
 
-  const worksOnGoing = useMemo(
-    () => filter(works, { isFinished: false }),
-    [works],
-  )
+  const workByTabTitle = useFindWorkByTabTitle(worksOnGoing)
 
   const {
     control,
@@ -68,52 +64,23 @@ export function MarkWorkRead() {
     formState: { isSubmitting, isSubmitSuccessful, errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      workId: '',
-      chapter: 0,
-      imageUrl: '',
+    values: {
+      workId: workByTabTitle?.id ?? '',
+      chapter: workByTabTitle?.nextChapter ?? workByTabTitle?.chapter ?? 0,
+      imageUrl: workByTabTitle?.imageUrl ?? '',
     },
   })
 
-  function markNotificationWorkAsRead(workId: string) {
-    const work = find(worksOnGoing, { id: workId })
-
-    if (!work) return
-
-    const notification = find(
-      notifications,
-      ({ content }) => content.workId === workId,
-    )
-
-    if (!notification) return
-
-    markNotificationAsRead(notification.id)
-      .then(() => {
-        console.log('Notification marked as read')
-      })
-      .catch((error) => {
-        console.log('Error marking notification as read', error)
-      })
-  }
-
-  async function handleMarkWorkAsRead({
-    workId,
-    chapter,
-    hasNewChapter,
-  }: FormSchema) {
-    try {
-      if (hasNewChapter) {
-        await markWorkAsRead({ workId, chapter })
-        markNotificationWorkAsRead(workId)
-      } else {
-        await updateWorkChapter({ chapter, workId })
-      }
-    } catch (error) {
-      console.error('Error marking work as read', error)
+  async function onSubmit({ workId, chapter, hasNewChapter }: FormSchema) {
+    if (hasNewChapter) {
+      await markWorkAsRead({ workId, chapter })
+    } else {
+      await updateWorkChapter({ chapter, workId })
     }
   }
 
   const [imageUrl, workId] = watch(['imageUrl', 'workId'])
+
   const hasNewChapter = watch('hasNewChapter')
 
   const setCurrentWorkToFormState = useCallback(
@@ -128,35 +95,9 @@ export function MarkWorkRead() {
     [reset],
   )
 
-  useEffect(() => {
-    if (!currentTabTitle) return
-
-    const worksNames = flatMap(worksOnGoing, (work) => [
-      work.name,
-      work.alternativeName ?? '',
-    ])
-
-    const firsTWorkMatchToTitle = search(worksNames, currentTabTitle)
-
-    const work =
-      find(worksOnGoing, (work) => {
-        return [work.name, work.alternativeName].includes(firsTWorkMatchToTitle)
-      }) ?? null
-
-    if (work) {
-      setCurrentWorkToFormState(work)
-    }
-  }, [setCurrentWorkToFormState, worksOnGoing, currentTabTitle])
-
   if (isLoading) {
     return <Container>Carregando...</Container>
   }
-
-  const worksOnGoingCollection = new ListCollection({
-    items: worksOnGoing,
-    itemToValue: (item) => item.id,
-    itemToString: (item) => item.name,
-  })
 
   return (
     <Container>
@@ -171,7 +112,7 @@ export function MarkWorkRead() {
 
         <form
           className="flex w-[300px] flex-col gap-4 "
-          onSubmit={handleSubmit(handleMarkWorkAsRead)}
+          onSubmit={handleSubmit(onSubmit)}
         >
           <Label>Obra</Label>
           <Controller
@@ -180,9 +121,8 @@ export function MarkWorkRead() {
             render={({ field }) => (
               <Select
                 value={field.value}
-                onValueChange={(value) => {
-                  const work = worksOnGoingCollection.find(value)
-
+                onValueChange={(id) => {
+                  const work = find(worksOnGoing, { id })
                   if (work) {
                     setCurrentWorkToFormState(work)
                   }
@@ -197,7 +137,7 @@ export function MarkWorkRead() {
                 </SelectTrigger>
 
                 <SelectContent>
-                  {worksOnGoingCollection.items.map((work) => (
+                  {worksOnGoing.map((work) => (
                     <SelectItem key={work.id} value={work.id}>
                       {work.name}
                     </SelectItem>
@@ -212,15 +152,7 @@ export function MarkWorkRead() {
           <Controller
             render={({ field }) => (
               <>
-                <NumberInput
-                  onChange={field.onChange}
-                  value={field.value}
-                  min={0}
-                  onBlur={field.onBlur}
-                  disabled={isLoadingWorks}
-                  placeholder="120"
-                />
-
+                <Input {...field} disabled={isLoadingWorks} type="number" />
                 {errors.chapter && (
                   <span className="mt-1 text-red-600">
                     {errors.chapter.message}

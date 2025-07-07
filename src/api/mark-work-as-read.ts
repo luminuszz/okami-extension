@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
 
+import { useMarkNotificationAsRead } from '@/api/mark-notification-as-read.ts'
 import { okamiHttpGateway } from '@/lib/axios'
 
 const markWorkAsReadInputSchema = z.object({
@@ -19,10 +20,15 @@ export async function markWorkAsRead(params: MarkWorkAsReadInput) {
 }
 
 export function useMarkWorkAsRead() {
+  const { markAsRead } = useMarkNotificationAsRead()
+
   const { mutateAsync, isPending } = useMutation({
     mutationKey: ['markWorkAsRead'],
     mutationFn: markWorkAsRead,
     retry: 3,
+    onSuccess(_, { workId }) {
+      markAsRead(workId)
+    },
   })
 
   return {

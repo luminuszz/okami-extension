@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react'
 
-import { getCurrentTab } from '@/lib/utils'
-
 export function useGetCurrentTabTitle() {
   const [tabTitle, setTabTitle] = useState<string | null>(null)
 
   useEffect(() => {
-    getCurrentTab().then((tabTitle) => setTabTitle(tabTitle))
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs.length > 0 && tabs[0].title) {
+        setTabTitle(tabs[0].title)
+      }
+    })
   }, [])
 
   return tabTitle

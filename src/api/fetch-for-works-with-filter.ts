@@ -48,26 +48,29 @@ export const getFetchWorksWithFilterQueryKey = (
 ) => (filter ? ['worksWithFilter', filter] : ['worksWithFilter'])
 
 export function useFetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
-  const { data: works = [], isPending: isLoading } = useQuery({
+  const {
+    data: works = [],
+    isPending,
+    isLoading,
+  } = useQuery({
     queryFn: () => fetchWorksWithFilter(filter),
     queryKey: getFetchWorksWithFilterQueryKey(filter),
-    initialData: () => {
+    placeholderData: () => {
       const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
       return cache ? (JSON.parse(cache) as WorkType[]) : []
     },
-
     select: (data) => {
       localStorage.setItem(
         localStorageKeys.worksOnGoingCache,
         JSON.stringify(data),
       )
 
-      return data
+      return data?.filter((work) => !work.isFinished)
     },
   })
 
   return {
     works,
-    isLoading,
+    isLoading: isLoading || isPending,
   }
 }
