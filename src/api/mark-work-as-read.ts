@@ -1,3 +1,4 @@
+import { useMutation } from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
@@ -15,4 +16,17 @@ export async function markWorkAsRead(params: MarkWorkAsReadInput) {
   await okamiHttpGateway.patch(`/work/${workId}/update-chapter`, {
     chapter,
   })
+}
+
+export function useMarkWorkAsRead() {
+  const { mutateAsync, isPending } = useMutation({
+    mutationKey: ['markWorkAsRead'],
+    mutationFn: markWorkAsRead,
+    retry: 3,
+  })
+
+  return {
+    isPending,
+    markWorkAsRead: mutateAsync,
+  }
 }

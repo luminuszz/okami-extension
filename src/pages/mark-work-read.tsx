@@ -13,8 +13,8 @@ import {
 } from '@/api/fetch-for-works-with-filter'
 import { useGetRecentNotifications } from '@/api/get-recent-notifications.ts'
 import { markNotificationAsRead } from '@/api/mark-notification-as-read.ts'
-import { markWorkAsRead } from '@/api/mark-work-as-read.ts'
-import { updateWorkChapterCall } from '@/api/update-work-chapter'
+import { useMarkWorkAsRead } from '@/api/mark-work-as-read.ts'
+import { useUpdateWorkChapter } from '@/api/update-work-chapter'
 import { useAuth } from '@/components/auth-provider'
 import { Container } from '@/components/container'
 import { NumberInput } from '@/components/number-input.tsx'
@@ -52,6 +52,8 @@ export function MarkWorkRead() {
   const { notifications } = useGetRecentNotifications()
   const { works, isLoading: isLoadingWorks } = useFetchWorksWithFilter()
   const currentTabTitle = useGetCurrentTabTitle()
+  const { updateWorkChapter } = useUpdateWorkChapter()
+  const { markWorkAsRead } = useMarkWorkAsRead()
 
   const worksOnGoing = useMemo(
     () => filter(works, { isFinished: false }),
@@ -104,7 +106,7 @@ export function MarkWorkRead() {
         await markWorkAsRead({ workId, chapter })
         markNotificationWorkAsRead(workId)
       } else {
-        await updateWorkChapterCall({ chapter, workId })
+        await updateWorkChapter({ chapter, workId })
       }
     } catch (error) {
       console.error('Error marking work as read', error)
@@ -215,7 +217,7 @@ export function MarkWorkRead() {
                   value={field.value}
                   min={0}
                   onBlur={field.onBlur}
-                  disabled={field.disabled}
+                  disabled={isLoadingWorks}
                   placeholder="120"
                 />
 
@@ -233,7 +235,7 @@ export function MarkWorkRead() {
           <Button
             data-isSuccess={isSubmitSuccessful}
             type="submit"
-            disabled={isSubmitting || !workId}
+            disabled={isSubmitting || !workId || isLoadingWorks}
             className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
           >
             {isSubmitSuccessful ? (

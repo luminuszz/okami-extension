@@ -44,6 +44,11 @@ export function NumberInput({
   }, [api, value])
 
   return (
-    <Input {...api.getInputProps()} onBlur={onBlur} placeholder={placeholder} />
+    <Input
+      {...api.getInputProps()}
+      onBlur={onBlur}
+      placeholder={placeholder}
+      disabled={disabled}
+    />
   )
 }

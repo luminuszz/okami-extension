@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
@@ -28,17 +28,15 @@ export async function getRecentNotifications() {
   return responseSchema.parse(response.data)
 }
 
+export const getRecentNotificationsQueryKey = () => ['recentNotifications']
+
 export function useGetRecentNotifications() {
-  const [notifications, setNotifications] = useState<NotificationType[]>([])
+  const queryKey = getRecentNotificationsQueryKey()
 
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    setIsLoading(true)
-    getRecentNotifications()
-      .then(setNotifications)
-      .finally(() => setIsLoading(false))
-  }, [])
+  const { data: notifications, isPending: isLoading } = useQuery({
+    queryKey,
+    queryFn: getRecentNotifications,
+  })
 
   return {
     notifications,

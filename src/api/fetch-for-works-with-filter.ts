@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 
 import { okamiHttpGateway } from '@/lib/axios'
@@ -36,35 +36,35 @@ const fetchWorksWithFilterOutputSchema = z.array(workSchema)
 export type WorkType = z.infer<typeof workSchema>
 
 export async function fetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
-  const { data } = await okamiHttpGateway.get('/work/list', {
+  const { data } = await okamiHttpGateway.get<WorkType[]>('/work/list', {
     params: filter,
   })
 
   return fetchWorksWithFilterOutputSchema.parse(data)
 }
 
+export const getFetchWorksWithFilterQueryKey = (
+  filter?: FetchWorksWithFilterInput,
+) => (filter ? ['worksWithFilter', filter] : ['worksWithFilter'])
+
 export function useFetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
-  const [works, setWorks] = useState<WorkType[]>(() => {
-    const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
-    return cache ? (JSON.parse(cache) as WorkType[]) : []
+  const { data: works = [], isPending: isLoading } = useQuery({
+    queryFn: () => fetchWorksWithFilter(filter),
+    queryKey: getFetchWorksWithFilterQueryKey(filter),
+    initialData: () => {
+      const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
+      return cache ? (JSON.parse(cache) as WorkType[]) : []
+    },
+
+    select: (data) => {
+      localStorage.setItem(
+        localStorageKeys.worksOnGoingCache,
+        JSON.stringify(data),
+      )
+
+      return data
+    },
   })
-
-  const [isLoading, setIsLoading] = useState(false)
-
-  useEffect(() => {
-    setIsLoading(true)
-    fetchWorksWithFilter(filter)
-      .then((works = []) => {
-        localStorage.setItem(
-          localStorageKeys.worksOnGoingCache,
-          JSON.stringify(works),
-        )
-
-        setWorks(works)
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false))
-  }, [filter])
 
   return {
     works,
