@@ -1,188 +1,193 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { clsx } from 'clsx'
-import { find } from 'lodash'
-import { Check } from 'lucide-react'
-import { useCallback } from 'react'
-import { Controller, useForm } from 'react-hook-form'
-import { z } from 'zod'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { clsx } from "clsx";
+import { find } from "lodash";
+import { Check } from "lucide-react";
+import { useCallback } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 
 import {
-  useFetchWorksWithFilter,
-  WorkType,
-} from '@/api/fetch-for-works-with-filter'
-import { useMarkWorkAsRead } from '@/api/mark-work-as-read.ts'
-import { useUpdateWorkChapter } from '@/api/update-work-chapter'
-import { useAuth } from '@/components/auth-provider'
-import { Container } from '@/components/container'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input.tsx'
-import { Label } from '@/components/ui/label'
+	useFetchWorksWithFilter,
+	type WorkType,
+} from "@/api/fetch-for-works-with-filter";
+
+import { useMarkWorkAsRead } from "@/api/mark-work-as-read.ts";
+import { useUpdateWorkChapter } from "@/api/update-work-chapter";
+import { useAuth } from "@/components/auth-provider";
+import { Container } from "@/components/container";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { useFindWorkByTabTitle } from '@/hooks/useFindWorkByTabTitle.ts'
-import { hasExceededMaxFractionDigits } from '@/lib/utils'
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import { useFindWorkByTabTitle } from "@/hooks/useFindWorkByTabTitle.ts";
+import { hasExceededMaxFractionDigits } from "@/lib/utils";
 
 const chapterNumberSchema = z.coerce
-  .number({
-    invalid_type_error: 'Informe um número válido',
-    required_error: 'O capitulo/episodio é obrigatório',
-  })
-  .min(0, 'O capitulo/episodio não pode ser menor que 0')
-  .refine((value) => !hasExceededMaxFractionDigits(value, 2), {
-    message: 'O capitulo/episodio não pode ter mais de 2 casas decimais',
-  })
+	.number({
+		invalid_type_error: "Informe um número válido",
+		required_error: "O capitulo/episodio é obrigatório",
+	})
+	.min(0, "O capitulo/episodio não pode ser menor que 0")
+	.refine((value) => !hasExceededMaxFractionDigits(value, 2), {
+		message: "O capitulo/episodio não pode ter mais de 2 casas decimais",
+	});
 
 const formSchema = z.object({
-  workId: z.string(),
-  chapter: chapterNumberSchema,
-  imageUrl: z.string().optional().default('/okami.png'),
-  hasNewChapter: z.boolean().optional(),
-})
+	workId: z.string(),
+	chapter: chapterNumberSchema,
+	imageUrl: z.string().optional().default("/okami.png"),
+	hasNewChapter: z.boolean().optional(),
+});
 
-type FormSchema = z.infer<typeof formSchema>
+type FormSchema = z.infer<typeof formSchema>;
 
 export function MarkWorkRead() {
-  const { isLoading } = useAuth()
-  const { works: worksOnGoing, isLoading: isLoadingWorks } =
-    useFetchWorksWithFilter()
+	const { isLoading } = useAuth();
+	const { works: worksOnGoing, isLoading: isLoadingWorks } =
+		useFetchWorksWithFilter();
 
-  const { updateWorkChapter } = useUpdateWorkChapter()
-  const { markWorkAsRead } = useMarkWorkAsRead()
+	const { updateWorkChapter } = useUpdateWorkChapter();
 
-  const workByTabTitle = useFindWorkByTabTitle(worksOnGoing)
+	const { markWorkAsRead } = useMarkWorkAsRead();
 
-  const {
-    control,
-    reset,
-    watch,
-    handleSubmit,
-    formState: { isSubmitting, isSubmitSuccessful, errors },
-  } = useForm<FormSchema>({
-    resolver: zodResolver(formSchema),
-    values: {
-      workId: workByTabTitle?.id ?? '',
-      chapter: workByTabTitle?.nextChapter ?? workByTabTitle?.chapter ?? 0,
-      imageUrl: workByTabTitle?.imageUrl ?? '',
-    },
-  })
+	const workByTabTitle = useFindWorkByTabTitle(worksOnGoing);
 
-  async function onSubmit({ workId, chapter, hasNewChapter }: FormSchema) {
-    if (hasNewChapter) {
-      await markWorkAsRead({ workId, chapter })
-    } else {
-      await updateWorkChapter({ chapter, workId })
-    }
-  }
+	const {
+		control,
+		reset,
+		watch,
+		handleSubmit,
+		formState: { isSubmitting, isSubmitSuccessful, errors },
+	} = useForm<FormSchema>({
+		resolver: zodResolver(formSchema),
+		values: {
+			workId: workByTabTitle?.id ?? "",
+			chapter: workByTabTitle?.nextChapter ?? workByTabTitle?.chapter ?? 0,
+			imageUrl: workByTabTitle?.imageUrl ?? "",
+			hasNewChapter: workByTabTitle?.hasNewChapter ?? false,
+		},
+	});
 
-  const [imageUrl, workId] = watch(['imageUrl', 'workId'])
+	async function onSubmit({ workId, chapter, hasNewChapter }: FormSchema) {
+		if (hasNewChapter) {
+			await markWorkAsRead({ workId, chapter });
+		} else {
+			await updateWorkChapter({ chapter, workId });
+		}
+	}
 
-  const hasNewChapter = watch('hasNewChapter')
+	const [imageUrl, workId, hasNewChapter] = watch([
+		"imageUrl",
+		"workId",
+		"hasNewChapter",
+	]);
 
-  const setCurrentWorkToFormState = useCallback(
-    (work: WorkType) => {
-      reset({
-        workId: work?.id || '',
-        chapter: work.nextChapter ?? work.chapter,
-        imageUrl: work?.imageUrl || '',
-        hasNewChapter: work?.hasNewChapter,
-      })
-    },
-    [reset],
-  )
+	const setCurrentWorkToFormState = useCallback(
+		(work: WorkType) => {
+			reset({
+				workId: work?.id || "",
+				chapter: work.nextChapter ?? work.chapter,
+				imageUrl: work?.imageUrl || "",
+				hasNewChapter: work?.hasNewChapter,
+			});
+		},
+		[reset],
+	);
 
-  if (isLoading) {
-    return <Container>Carregando...</Container>
-  }
+	if (isLoading) {
+		return <Container>Carregando...</Container>;
+	}
 
-  return (
-    <Container>
-      <div className="flex flex-col items-center justify-center gap-4 p-4">
-        <picture>
-          <img
-            className="size-[200px] rounded-sm"
-            alt="image"
-            src={imageUrl || '/okami.png'}
-          />
-        </picture>
+	return (
+		<Container>
+			<div className="flex flex-col items-center justify-center gap-4 p-4">
+				<picture>
+					<img
+						className="size-[200px] rounded-sm"
+						alt={`work ${workByTabTitle?.name}`}
+						src={imageUrl || "/okami.png"}
+					/>
+				</picture>
 
-        <form
-          className="flex w-[300px] flex-col gap-4 "
-          onSubmit={handleSubmit(onSubmit)}
-        >
-          <Label>Obra</Label>
-          <Controller
-            control={control}
-            name="workId"
-            render={({ field }) => (
-              <Select
-                value={field.value}
-                onValueChange={(id) => {
-                  const work = find(worksOnGoing, { id })
-                  if (work) {
-                    setCurrentWorkToFormState(work)
-                  }
-                }}
-              >
-                <SelectTrigger
-                  className={clsx('w-full', {
-                    'animate-pulse': isLoadingWorks,
-                  })}
-                >
-                  <SelectValue placeholder="Selecione a obra" />
-                </SelectTrigger>
+				<form
+					className="flex w-[300px] flex-col gap-4 "
+					onSubmit={handleSubmit(onSubmit)}
+				>
+					<Label>Obra</Label>
+					<Controller
+						control={control}
+						name="workId"
+						render={({ field }) => (
+							<Select
+								value={field.value}
+								onValueChange={(id) => {
+									const work = find(worksOnGoing, { id });
+									if (work) {
+										setCurrentWorkToFormState(work);
+									}
+								}}
+							>
+								<SelectTrigger
+									className={clsx("w-full", {
+										"animate-pulse": isLoadingWorks,
+									})}
+								>
+									<SelectValue placeholder="Selecione a obra" />
+								</SelectTrigger>
 
-                <SelectContent>
-                  {worksOnGoing.map((work) => (
-                    <SelectItem key={work.id} value={work.id}>
-                      {work.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          />
+								<SelectContent>
+									{worksOnGoing.map((work) => (
+										<SelectItem key={work.id} value={work.id}>
+											{work.name}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+						)}
+					/>
 
-          <Label>Capitulo/Episodio</Label>
+					<Label>Capitulo/Episodio</Label>
 
-          <Controller
-            render={({ field }) => (
-              <>
-                <Input {...field} disabled={isLoadingWorks} type="number" />
-                {errors.chapter && (
-                  <span className="mt-1 text-red-600">
-                    {errors.chapter.message}
-                  </span>
-                )}
-              </>
-            )}
-            name="chapter"
-            control={control}
-          />
+					<Controller
+						render={({ field }) => (
+							<>
+								<Input {...field} disabled={isLoadingWorks} type="number" />
+								{errors.chapter && (
+									<span className="mt-1 text-red-600">
+										{errors.chapter.message}
+									</span>
+								)}
+							</>
+						)}
+						name="chapter"
+						control={control}
+					/>
 
-          <Button
-            data-isSuccess={isSubmitSuccessful}
-            type="submit"
-            disabled={isSubmitting || !workId || isLoadingWorks}
-            className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
-          >
-            {isSubmitSuccessful ? (
-              <>
-                <Check className="mr-2 size-4 text-gray-100" /> Obra atualizada
-                com sucesso
-              </>
-            ) : hasNewChapter ? (
-              'Marcar como lido'
-            ) : (
-              'Atualizar capitulo'
-            )}
-          </Button>
-        </form>
-      </div>
-    </Container>
-  )
+					<Button
+						data-isSuccess={isSubmitSuccessful}
+						type="submit"
+						disabled={isSubmitting || !workId || isLoadingWorks}
+						className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
+					>
+						{isSubmitSuccessful ? (
+							<>
+								<Check className="mr-2 size-4 text-gray-100" /> Obra atualizada
+								com sucesso
+							</>
+						) : hasNewChapter ? (
+							"Marcar como lido"
+						) : (
+							"Atualizar capitulo"
+						)}
+					</Button>
+				</form>
+			</div>
+		</Container>
+	);
 }
