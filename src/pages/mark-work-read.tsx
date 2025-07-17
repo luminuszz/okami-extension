@@ -1,32 +1,23 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import { clsx } from "clsx";
-import { find } from "lodash";
-import { Check } from "lucide-react";
-import { useCallback } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { z } from "zod";
+import {zodResolver} from "@hookform/resolvers/zod";
+import {clsx} from "clsx";
+import {find} from "lodash";
+import {useCallback} from "react";
+import {Controller, useForm} from "react-hook-form";
+import {z} from "zod";
 
-import {
-	useFetchWorksWithFilter,
-	type WorkType,
-} from "@/api/fetch-for-works-with-filter";
+import {useFetchWorksWithFilter, type WorkType} from "@/api/fetch-for-works-with-filter";
 
-import { useMarkWorkAsRead } from "@/api/mark-work-as-read.ts";
-import { useUpdateWorkChapter } from "@/api/update-work-chapter";
-import { useAuth } from "@/components/auth-provider";
-import { Container } from "@/components/container";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input.tsx";
-import { Label } from "@/components/ui/label";
-import {
-	Select,
-	SelectContent,
-	SelectItem,
-	SelectTrigger,
-	SelectValue,
-} from "@/components/ui/select";
-import { useFindWorkByTabTitle } from "@/hooks/useFindWorkByTabTitle.ts";
-import { hasExceededMaxFractionDigits } from "@/lib/utils";
+import {useMarkWorkAsRead} from "@/api/mark-work-as-read.ts";
+import {useUpdateWorkChapter} from "@/api/update-work-chapter";
+import {useAuth} from "@/components/auth-provider";
+import {Container} from "@/components/container";
+import {useToast} from "@/components/toast-provider.tsx";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input.tsx";
+import {Label} from "@/components/ui/label";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
+import {useFindWorkByTabTitle} from "@/hooks/useFindWorkByTabTitle.ts";
+import {hasExceededMaxFractionDigits} from "@/lib/utils";
 
 const chapterNumberSchema = z.coerce
 	.number({
@@ -48,9 +39,10 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 export function MarkWorkRead() {
+	const { showToast } = useToast();
+
 	const { isLoading } = useAuth();
-	const { works: worksOnGoing, isLoading: isLoadingWorks } =
-		useFetchWorksWithFilter();
+	const { works: worksOnGoing, isLoading: isLoadingWorks } = useFetchWorksWithFilter();
 
 	const { updateWorkChapter } = useUpdateWorkChapter();
 
@@ -63,7 +55,7 @@ export function MarkWorkRead() {
 		reset,
 		watch,
 		handleSubmit,
-		formState: { isSubmitting, isSubmitSuccessful, errors },
+		formState: { isSubmitting, errors },
 	} = useForm<FormSchema>({
 		resolver: zodResolver(formSchema),
 		values: {
@@ -75,18 +67,20 @@ export function MarkWorkRead() {
 	});
 
 	async function onSubmit({ workId, chapter, hasNewChapter }: FormSchema) {
-		if (hasNewChapter) {
-			await markWorkAsRead({ workId, chapter });
-		} else {
-			await updateWorkChapter({ chapter, workId });
+		try {
+			if (hasNewChapter) {
+				await markWorkAsRead({ workId, chapter });
+			} else {
+				await updateWorkChapter({ chapter, workId });
+			}
+
+			showToast("Obra atualizada com sucesso!", "success");
+		} catch {
+			showToast("Ocorreu um erro ao atualizar a obra", "error");
 		}
 	}
 
-	const [imageUrl, workId, hasNewChapter] = watch([
-		"imageUrl",
-		"workId",
-		"hasNewChapter",
-	]);
+	const [imageUrl, hasNewChapter] = watch(["imageUrl", "hasNewChapter"]);
 
 	const setCurrentWorkToFormState = useCallback(
 		(work: WorkType) => {
@@ -99,6 +93,8 @@ export function MarkWorkRead() {
 		},
 		[reset],
 	);
+
+	const buttonMessage = hasNewChapter ? "Marcar como lido" : "Atualizar capitulo";
 
 	if (isLoading) {
 		return <Container>Carregando...</Container>;
@@ -115,10 +111,7 @@ export function MarkWorkRead() {
 					/>
 				</picture>
 
-				<form
-					className="flex w-[300px] flex-col gap-4 "
-					onSubmit={handleSubmit(onSubmit)}
-				>
+				<form className="flex w-[300px] flex-col gap-4 " onSubmit={handleSubmit(onSubmit)}>
 					<Label>Obra</Label>
 					<Controller
 						control={control}
@@ -159,9 +152,7 @@ export function MarkWorkRead() {
 							<>
 								<Input {...field} disabled={isLoadingWorks} type="number" />
 								{errors.chapter && (
-									<span className="mt-1 text-red-600">
-										{errors.chapter.message}
-									</span>
+									<span className="mt-1 text-red-600">{errors.chapter.message}</span>
 								)}
 							</>
 						)}
@@ -169,22 +160,8 @@ export function MarkWorkRead() {
 						control={control}
 					/>
 
-					<Button
-						data-isSuccess={isSubmitSuccessful}
-						type="submit"
-						disabled={isSubmitting || !workId || isLoadingWorks}
-						className="data-[isSuccess=true]:bg-emerald-500 data-[isSuccess=true]:text-gray-100"
-					>
-						{isSubmitSuccessful ? (
-							<>
-								<Check className="mr-2 size-4 text-gray-100" /> Obra atualizada
-								com sucesso
-							</>
-						) : hasNewChapter ? (
-							"Marcar como lido"
-						) : (
-							"Atualizar capitulo"
-						)}
+					<Button type="submit" disabled={isSubmitting}>
+						{buttonMessage}
 					</Button>
 				</form>
 			</div>
