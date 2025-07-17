@@ -36,18 +36,8 @@ export function useMarkWorkAsRead() {
             void client.cancelQueries({queryKey: workListQueryKey});
 
             return updateQueryCache((cache) => {
-				
-                cache?.forEach((item) => {
-                    if (item.id === workId) {
-                        item.chapter = chapter;
-                        item.nextChapter = null;
-                        item.nextChapterUpdatedAt = null;
-                        item.hasNewChapter = false;
-                    }
-                });
-
-                return cache;
-            });
+                return cache?.map(item => item.id === workId ? {...item, chapter} : item)
+            }, {useImmer: false});
         },
         onError(_, __, cache) {
             updateQueryCache(cache);

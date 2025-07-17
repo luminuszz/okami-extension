@@ -26,18 +26,9 @@ export function useUpdateWorkChapter() {
         retry: 3,
         onMutate({workId, chapter}) {
             void client.cancelQueries({queryKey: workListQueryKey});
-
             return updateQueryCache((cache) => {
-
-
-                cache?.forEach((work) => {
-                    if (work.id === workId) {
-                        work.chapter = chapter;
-                    }
-                });
-
-                return cache;
-            });
+                return cache?.map(item => item.id === workId ? {...item, chapter} : item)
+            }, {useImmer: false});
         },
         onError(_, __, cache) {
             updateQueryCache(cache);
