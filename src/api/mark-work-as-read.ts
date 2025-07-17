@@ -44,6 +44,7 @@ export function useMarkWorkAsRead() {
 						item.chapter = chapter;
 						item.nextChapter = null;
 						item.nextChapterUpdatedAt = null;
+						item.hasNewChapter = false;
 					}
 				});
 
