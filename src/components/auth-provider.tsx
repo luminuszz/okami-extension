@@ -1,19 +1,8 @@
-import {
-  createContext,
-  ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from 'react'
+import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from 'react'
 
-import { createSession } from '@/api/create-session'
-import { eventBridge } from '@/lib/events'
-import {
-  getTokenFormOkamiIntegrationStorage,
-  getTokensByExtensionStorage,
-  setTokensInStorage,
-} from '@/lib/storage'
+import {createSession} from '@/api/create-session'
+import {eventBridge} from '@/lib/events'
+import {getTokenFormOkamiIntegrationStorage, getTokensByExtensionStorage, setTokensInStorage,} from '@/lib/storage'
 
 export interface MarkLoginInput {
   email: string
@@ -80,14 +69,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const { refreshToken } = getTokensByExtensionStorage()
 
       if (refreshToken) {
-        console.log('refreshToken', refreshToken)
         setIsLogged(true)
-
         return
       }
 
-      const refreshTokenFromStorage =
-        await getTokenFormOkamiIntegrationStorage()
+      const refreshTokenFromStorage = await getTokenFormOkamiIntegrationStorage()
 
       if (refreshTokenFromStorage) {
         console.log('refreshTokenFromStorage', refreshTokenFromStorage)
