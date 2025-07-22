@@ -1,45 +1,48 @@
-import {useMutation, useQueryClient} from "@tanstack/react-query";
-import {getFetchWorksWithFilterQueryKey, type WorkType,} from "@/api/fetch-for-works-with-filter.ts";
-import {useUpdateQueryCache} from "@/hooks/useUpdateQueryCache.ts";
-import {okamiHttpGateway} from "@/lib/axios";
+import {getFetchWorksWithFilterQueryKey, type WorkType} from '@/api/fetch-for-works-with-filter.ts'
+import {useUpdateQueryCache} from '@/hooks/useUpdateQueryCache.ts'
+import {okamiHttpGateway} from '@/lib/axios'
+import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 interface UpdateWorkInput {
-    workId: string;
-    chapter: number;
+  workId: string
+  chapter: number
 }
 
-export async function updateWorkChapterCall({chapter, workId}: UpdateWorkInput) {
-    await okamiHttpGateway.put(`/work/update-work/${workId}`, {
-        chapter,
-    });
+export async function updateWorkChapterCall({ chapter, workId }: UpdateWorkInput) {
+  await okamiHttpGateway.put(`/work/update-work/${workId}`, {
+    chapter,
+  })
 }
 
-const workListQueryKey = getFetchWorksWithFilterQueryKey();
+const workListQueryKey = getFetchWorksWithFilterQueryKey()
 
 export function useUpdateWorkChapter() {
-    const updateQueryCache = useUpdateQueryCache<WorkType[]>(workListQueryKey);
-    const client = useQueryClient();
+  const updateQueryCache = useUpdateQueryCache<WorkType[]>(workListQueryKey)
+  const client = useQueryClient()
 
-    const {isPending, mutateAsync} = useMutation({
-        mutationKey: ["updateWorkChapter"],
-        mutationFn: updateWorkChapterCall,
-        retry: 3,
-        onMutate({workId, chapter}) {
-            void client.cancelQueries({queryKey: workListQueryKey});
-            return updateQueryCache((cache) => {
-                return cache?.map(item => item.id === workId ? {...item, chapter} : item)
-            }, {useImmer: false});
+  const { isPending, mutate } = useMutation({
+    mutationKey: ['updateWorkChapter'],
+    mutationFn: updateWorkChapterCall,
+    retry: 3,
+    onMutate({ workId, chapter }) {
+      void client.cancelQueries({ queryKey: workListQueryKey })
+      return updateQueryCache(
+        (cache) => {
+          return cache?.map((item) => (item.id === workId ? { ...item, chapter } : item))
         },
-        onError(_, __, cache) {
-            updateQueryCache(cache);
-        },
-        onSuccess() {
-            void client.invalidateQueries({queryKey: workListQueryKey});
-        },
-    });
+        { useImmer: false },
+      )
+    },
+    onError(_, __, cache) {
+      updateQueryCache(cache)
+    },
+    onSuccess() {
+      void client.invalidateQueries({ queryKey: workListQueryKey })
+    },
+  })
 
-    return {
-        isPending,
-        updateWorkChapter: mutateAsync,
-    };
+  return {
+    isPending,
+    updateWorkChapter: mutate,
+  }
 }

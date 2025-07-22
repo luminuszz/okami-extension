@@ -1,12 +1,11 @@
 import {find, flatMap} from 'lodash'
 import {useEffect, useState} from 'react'
-
-import {WorkType} from '@/api/fetch-for-works-with-filter.ts'
+import {WorkForExtensionType} from '@/api/fetch-work-list.ts'
 import {useGetCurrentTabTitle} from '@/hooks/useGetCurrentWorkByTabTitle.ts'
 import {search} from '@/lib/utils.ts'
 
-export function useFindWorkByTabTitle(works: WorkType[]) {
-  const [work, setWork] = useState<WorkType | null>(null)
+export function useFindWorkByTabTitle(works: WorkForExtensionType[]) {
+  const [work, setWork] = useState<WorkForExtensionType | null>(null)
 
   const currentTabTitle = useGetCurrentTabTitle()
 

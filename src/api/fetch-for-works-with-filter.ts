@@ -57,6 +57,7 @@ export function useFetchWorksWithFilter(filter?: FetchWorksWithFilterInput) {
     queryKey: getFetchWorksWithFilterQueryKey(filter),
     placeholderData: () => {
       const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
+
       return cache ? (JSON.parse(cache) as WorkType[]) : []
     },
     select: (data) => {

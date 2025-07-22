@@ -28,7 +28,7 @@ export function useMarkWorkAsRead() {
   const updateQueryCache = useUpdateQueryCache<WorkType[]>(getFetchWorksWithFilterQueryKey())
   const client = useQueryClient()
 
-  const { mutateAsync, isPending } = useMutation({
+  const { mutate, isPending } = useMutation({
     mutationKey: ['markWorkAsRead'],
     mutationFn: markWorkAsRead,
     retry: 3,
@@ -55,6 +55,6 @@ export function useMarkWorkAsRead() {
 
   return {
     isPending,
-    markWorkAsRead: mutateAsync,
+    markWorkAsRead: mutate,
   }
 }
