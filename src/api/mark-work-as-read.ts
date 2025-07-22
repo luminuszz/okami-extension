@@ -1,4 +1,5 @@
 import {getFetchWorksWithFilterQueryKey, type WorkType} from '@/api/fetch-for-works-with-filter.ts'
+import {getFetchWorkListQueryKey} from '@/api/fetch-work-list.ts'
 import {useMarkNotificationAsRead} from '@/api/mark-notification-as-read.ts'
 import {useUpdateQueryCache} from '@/hooks/useUpdateQueryCache.ts'
 import {okamiHttpGateway} from '@/lib/axios'
@@ -20,7 +21,7 @@ export async function markWorkAsRead(params: MarkWorkAsReadInput) {
   })
 }
 
-const workListQueryKey = getFetchWorksWithFilterQueryKey()
+const workListQueryKey = getFetchWorkListQueryKey()
 
 export function useMarkWorkAsRead() {
   const { markAsRead: markNotificationAsRead } = useMarkNotificationAsRead()
@@ -28,7 +29,7 @@ export function useMarkWorkAsRead() {
   const updateQueryCache = useUpdateQueryCache<WorkType[]>(getFetchWorksWithFilterQueryKey())
   const client = useQueryClient()
 
-  const { mutate, isPending } = useMutation({
+  const { mutateAsync, isPending } = useMutation({
     mutationKey: ['markWorkAsRead'],
     mutationFn: markWorkAsRead,
     retry: 3,
@@ -47,14 +48,14 @@ export function useMarkWorkAsRead() {
     onError(_, __, cache) {
       updateQueryCache(cache)
     },
-    onSuccess(_, { workId }) {
-      void client.invalidateQueries({ queryKey: workListQueryKey })
+    async onSuccess(_, { workId }) {
       markNotificationAsRead(workId)
+      await client.invalidateQueries({ queryKey: workListQueryKey })
     },
   })
 
   return {
     isPending,
-    markWorkAsRead: mutate,
+    markWorkAsRead: mutateAsync,
   }
 }

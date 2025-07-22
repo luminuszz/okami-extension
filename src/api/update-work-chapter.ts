@@ -20,7 +20,7 @@ export function useUpdateWorkChapter() {
   const updateQueryCache = useUpdateQueryCache<WorkType[]>(workListQueryKey)
   const client = useQueryClient()
 
-  const { isPending, mutate } = useMutation({
+  const { isPending, mutateAsync } = useMutation({
     mutationKey: ['updateWorkChapter'],
     mutationFn: updateWorkChapterCall,
     retry: 3,
@@ -28,7 +28,9 @@ export function useUpdateWorkChapter() {
       void client.cancelQueries({ queryKey: workListQueryKey })
       return updateQueryCache(
         (cache) => {
-          return cache?.map((item) => (item.id === workId ? { ...item, chapter } : item))
+          return cache?.map((item) =>
+            item.id === workId ? { ...item, chapter, hasNewChapter: false } : item,
+          )
         },
         { useImmer: false },
       )
@@ -36,13 +38,13 @@ export function useUpdateWorkChapter() {
     onError(_, __, cache) {
       updateQueryCache(cache)
     },
-    onSuccess() {
-      void client.invalidateQueries({ queryKey: workListQueryKey })
+    async onSuccess() {
+      await client.invalidateQueries({ queryKey: workListQueryKey })
     },
   })
 
   return {
     isPending,
-    updateWorkChapter: mutate,
+    updateWorkChapter: mutateAsync,
   }
 }

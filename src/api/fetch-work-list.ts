@@ -1,19 +1,19 @@
 import {okamiHttpGateway} from '@/lib/axios.ts'
+import {localStorageKeys} from '@/lib/storage.ts'
 import {useQuery} from '@tanstack/react-query'
 import {z} from 'zod'
-import {localStorageKeys} from "@/lib/storage.ts";
 
 const workForExtensionSchema = z.object({
-    id: z.string(),
-    name: z.string(),
-    imageId: z.string().nullable(),
-    chapter: z.number(),
-    nextChapter: z.number().nullable(),
-    hasNewChapter: z.boolean(),
-    createdAt: z.coerce.date(),
-    category: z.string(),
-    alternativeName: z.string().optional().nullable(),
-    imageUrl: z.string().optional().nullable(),
+  id: z.string(),
+  name: z.string(),
+  imageId: z.string().nullable(),
+  chapter: z.number(),
+  nextChapter: z.number().nullable(),
+  hasNewChapter: z.boolean(),
+  createdAt: z.coerce.date(),
+  category: z.string(),
+  alternativeName: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
 })
 
 const workListSchema = z.array(workForExtensionSchema)
@@ -21,31 +21,30 @@ const workListSchema = z.array(workForExtensionSchema)
 export type WorkForExtensionType = z.infer<typeof workForExtensionSchema>
 
 export async function fetchWorkList() {
-    const {data} = await okamiHttpGateway.get<WorkForExtensionType[]>('/work/list/extension')
+  const { data } = await okamiHttpGateway.get<WorkForExtensionType[]>('/work/list/extension')
 
-    return workListSchema.parse(data)
+  return workListSchema.parse(data)
 }
 
 export const getFetchWorkListQueryKey = () => ['workList']
 
 export function useFetchWorkList() {
-    const query = useQuery({
-        queryFn: fetchWorkList,
-        queryKey: getFetchWorkListQueryKey(),
-        placeholderData: () => {
-            const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
-            return cache ? (JSON.parse(cache) as WorkForExtensionType[]) : []
-        },
-        select: (data) => {
-            localStorage.setItem(localStorageKeys.worksOnGoingCache, JSON.stringify(data))
+  const query = useQuery({
+    queryFn: fetchWorkList,
+    queryKey: getFetchWorkListQueryKey(),
+    select: (data) => {
+      localStorage.setItem(localStorageKeys.worksOnGoingCache, JSON.stringify(query.data ?? []))
+      return data
+    },
+    placeholderData: () => {
+      const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
+      return cache ? (JSON.parse(cache) as WorkForExtensionType[]) : []
+    },
+  })
 
-            return data
-        }
-    })
-
-    return {
-        ...query,
-        data: query.data ?? [],
-        isLoading: query.isLoading || query.isPending,
-    }
+  return {
+    ...query,
+    data: query.data ?? [],
+    isLoading: query.isLoading || query.isPending,
+  }
 }
