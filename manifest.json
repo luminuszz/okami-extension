@@ -1,6 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "Run Okami ",
+  "name": "okami",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "runOkami@myokami.xyz"
+    }
+  },
   "description": "Runs okami work finder",
   "version": "1.0",
   "icons": {
@@ -9,14 +14,8 @@
     "48": "images/icon48.png",
     "128": "images/icon128.png"
   },
-  "host_permissions": [
-    "http://*/*",
-    "https://*/*"
-  ],
-  "permissions": [
-    "storage",
-    "tabs"
-  ],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "permissions": ["storage", "tabs"],
   "action": {
     "default_popup": "index.html"
   },
@@ -31,5 +30,4 @@
       "all_frames": true
     }
   ]
-
 }
