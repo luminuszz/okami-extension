@@ -58,7 +58,7 @@ export function MarkWorkRead() {
     formState: { errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
-    values: {
+    defaultValues: {
       workId: workByTabTitle?.id ?? '',
       chapter: workByTabTitle?.nextChapter ?? workByTabTitle?.chapter ?? 0,
       imageUrl: workByTabTitle?.imageUrl ?? '',
@@ -68,13 +68,15 @@ export function MarkWorkRead() {
 
   const [imageUrl, hasNewChapter, workId] = watch(['imageUrl', 'hasNewChapter', 'workId'])
 
-  function onWorkUpdated() {
+  function onWorkUpdated(chapterValue: number) {
     const work = find(worksOnGoing, { id: workId })
 
     if (work) {
       setCurrentWorkToFormState({
         ...work,
         hasNewChapter: false,
+        nextChapter: null,
+        chapter: chapterValue,
       })
     }
   }
@@ -82,10 +84,12 @@ export function MarkWorkRead() {
   async function onSubmit({ workId, chapter, hasNewChapter }: FormSchema) {
     try {
       if (hasNewChapter) {
-        await markWorkAsRead({ workId, chapter }, { onSuccess: onWorkUpdated })
+        await markWorkAsRead({ workId, chapter })
       } else {
-        await updateWorkChapter({ chapter, workId }, { onSuccess: onWorkUpdated })
+        await updateWorkChapter({ chapter, workId })
       }
+
+      onWorkUpdated(chapter)
 
       showToast('Obra atualizada com sucesso!', 'success')
     } catch {

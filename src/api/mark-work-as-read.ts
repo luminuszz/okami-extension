@@ -7,55 +7,55 @@ import {useMutation, useQueryClient} from '@tanstack/react-query'
 import {z} from 'zod'
 
 const markWorkAsReadInputSchema = z.object({
-  workId: z.string(),
-  chapter: z.number(),
+    workId: z.string(),
+    chapter: z.number(),
 })
 
 type MarkWorkAsReadInput = z.infer<typeof markWorkAsReadInputSchema>
 
 export async function markWorkAsRead(params: MarkWorkAsReadInput) {
-  const { chapter, workId } = markWorkAsReadInputSchema.parse(params)
+    const {chapter, workId} = markWorkAsReadInputSchema.parse(params)
 
-  await okamiHttpGateway.patch(`/work/${workId}/update-chapter`, {
-    chapter,
-  })
+    await okamiHttpGateway.patch(`/work/${workId}/update-chapter`, {
+        chapter,
+    })
 }
 
 const workListQueryKey = getFetchWorkListQueryKey()
 
 export function useMarkWorkAsRead() {
-  const { markAsRead: markNotificationAsRead } = useMarkNotificationAsRead()
+    const {markAsRead: markNotificationAsRead} = useMarkNotificationAsRead()
 
-  const updateQueryCache = useUpdateQueryCache<WorkType[]>(getFetchWorksWithFilterQueryKey())
-  const client = useQueryClient()
+    const updateQueryCache = useUpdateQueryCache<WorkType[]>(getFetchWorksWithFilterQueryKey())
+    const client = useQueryClient()
 
-  const { mutateAsync, isPending } = useMutation({
-    mutationKey: ['markWorkAsRead'],
-    mutationFn: markWorkAsRead,
-    retry: 3,
-    onMutate({ chapter, workId }) {
-      void client.cancelQueries({ queryKey: workListQueryKey })
-
-      return updateQueryCache(
-        (cache) => {
-          return cache?.map((item) =>
-            item.id === workId ? { ...item, chapter, hasNewChapter: false } : item,
-          )
+    const {mutateAsync, isPending} = useMutation({
+        mutationKey: ['markWorkAsRead'],
+        mutationFn: markWorkAsRead,
+        retry: 3,
+        onMutate({chapter, workId}) {
+            void client.cancelQueries({queryKey: workListQueryKey})
+          
+            return updateQueryCache(
+                (cache) => {
+                    return cache?.map((item) =>
+                        item.id === workId ? {...item, chapter, hasNewChapter: false, nextChapter: chapter} : item,
+                    )
+                },
+                {useImmer: false},
+            )
         },
-        { useImmer: false },
-      )
-    },
-    onError(_, __, cache) {
-      updateQueryCache(cache)
-    },
-    async onSuccess(_, { workId }) {
-      markNotificationAsRead(workId)
-      await client.invalidateQueries({ queryKey: workListQueryKey })
-    },
-  })
+        onError(_, __, cache) {
+            updateQueryCache(cache)
+        },
+        async onSuccess(_, {workId}) {
+            markNotificationAsRead(workId)
+            await client.invalidateQueries({queryKey: workListQueryKey})
+        },
+    })
 
-  return {
-    isPending,
-    markWorkAsRead: mutateAsync,
-  }
+    return {
+        isPending,
+        markWorkAsRead: mutateAsync,
+    }
 }
