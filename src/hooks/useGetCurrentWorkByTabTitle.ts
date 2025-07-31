@@ -1,15 +1,22 @@
-import { useEffect, useState } from 'react'
+import {useEffect, useState} from 'react'
 
 export function useGetCurrentTabTitle() {
-  const [tabTitle, setTabTitle] = useState<string | null>(null)
+    const [tabTitle, setTabTitle] = useState<string | null>(null)
 
-  useEffect(() => {
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs.length > 0 && tabs[0].title) {
-        setTabTitle(tabs[0].title)
-      }
-    })
-  }, [])
+    useEffect(() => {
+        if (typeof chrome === 'undefined' || !chrome.tabs) {
+            console.warn(
+                'Chrome API is not available. This hook should be used in a Chrome extension context.',
+            )
+            return
+        }
 
-  return tabTitle
+        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+            if (tabs.length > 0 && tabs[0].title) {
+                setTabTitle(tabs[0].title)
+            }
+        })
+    }, [])
+
+    return tabTitle
 }

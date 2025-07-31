@@ -8,27 +8,26 @@ import {AuthProvider} from './components/auth-provider'
 import {Button} from './components/ui/button'
 
 export function App() {
-  useEffect(() => {
-    const root = window.document.documentElement
+    useEffect(() => {
+        const root = window.document.documentElement
+        root.classList.add('dark')
+    }, [])
 
-    root.classList.add('dark')
-  }, [])
-
-  return (
-    <PersistQueryClientProvider
-      client={queryClient}
-      persistOptions={{ persister: queryClientPersister }}
-    >
-      <AuthProvider>
-        <div className="flex items-start justify-end">
-          <Button variant="ghost" size="icon">
-            <X onClick={() => window.close()} />
-          </Button>
-        </div>
-        <ToastProvider>
-          <Router />
-        </ToastProvider>
-      </AuthProvider>
-    </PersistQueryClientProvider>
-  )
+    return (
+        <PersistQueryClientProvider
+            client={queryClient}
+            persistOptions={{persister: queryClientPersister}}
+        >
+            <AuthProvider>
+                <div className="flex items-start justify-end">
+                    <Button variant="ghost" size="icon">
+                        <X onClick={() => window.close()}/>
+                    </Button>
+                </div>
+                <ToastProvider>
+                    <Router/>
+                </ToastProvider>
+            </AuthProvider>
+        </PersistQueryClientProvider>
+    )
 }
