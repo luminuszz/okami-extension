@@ -1,5 +1,4 @@
 import {zodResolver} from '@hookform/resolvers/zod'
-import {clsx} from 'clsx'
 import {find} from 'lodash'
 import {useCallback} from 'react'
 import {Controller, useForm} from 'react-hook-form'
@@ -14,7 +13,7 @@ import {useToast} from '@/components/toast-provider.tsx'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input.tsx'
 import {Label} from '@/components/ui/label'
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
+import {WorkSelect} from '@/components/work-select.tsx'
 import {useFindWorkByTabTitle} from '@/hooks/useFindWorkByTabTitle.ts'
 import {hasExceededMaxFractionDigits} from '@/lib/utils'
 import {Loader2} from 'lucide-react'
@@ -40,9 +39,7 @@ type FormSchema = z.infer<typeof formSchema>
 
 export function MarkWorkRead() {
   const { showToast } = useToast()
-
   const { isLoading } = useAuth()
-
   const { data: worksOnGoing = [], isLoading: isLoadingWorks } = useFetchWorkList()
 
   const { updateWorkChapter, isPending: isPendingUpdateChapter } = useUpdateWorkChapter()
@@ -58,7 +55,7 @@ export function MarkWorkRead() {
     formState: { errors },
   } = useForm<FormSchema>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
+    values: {
       workId: workByTabTitle?.id ?? '',
       chapter: workByTabTitle?.nextChapter ?? workByTabTitle?.chapter ?? 0,
       imageUrl: workByTabTitle?.imageUrl ?? '',
@@ -97,17 +94,14 @@ export function MarkWorkRead() {
     }
   }
 
-  const setCurrentWorkToFormState = useCallback(
-    (work: WorkForExtensionType) => {
-      reset({
-        workId: work?.id || '',
-        chapter: work.nextChapter ?? work.chapter,
-        imageUrl: work?.imageUrl || '',
-        hasNewChapter: work?.hasNewChapter,
-      })
-    },
-    [reset],
-  )
+  const setCurrentWorkToFormState = useCallback((work: WorkForExtensionType) => {
+    reset({
+      workId: work?.id || '',
+      chapter: work.nextChapter ?? work.chapter,
+      imageUrl: work?.imageUrl || '',
+      hasNewChapter: work?.hasNewChapter,
+    })
+  }, [])
 
   const buttonMessage = hasNewChapter ? 'Marcar como lido' : 'Atualizar capitulo'
   const canDisableButton = isPendingUpdateChapter || isPendingMarkWorkAsRead || !workId || isLoadingWorks
@@ -118,7 +112,7 @@ export function MarkWorkRead() {
 
   return (
     <Container>
-      <div className="flex flex-col items-center justify-center gap-4 p-4">
+      <div className="flex flex-col items-center justify-center gap-4 p-4" id="mark-work-read">
         <picture>
           <img
             className="size-[200px] rounded-sm"
@@ -133,32 +127,19 @@ export function MarkWorkRead() {
             control={control}
             name="workId"
             render={({ field }) => (
-              <Select
-                defaultValue={workByTabTitle?.id ?? field.value}
+              <WorkSelect
                 value={field.value}
-                onValueChange={(id) => {
+                onSelected={(id) => {
                   const work = find(worksOnGoing, { id })
                   if (work) {
                     setCurrentWorkToFormState(work)
                   }
                 }}
-              >
-                <SelectTrigger
-                  className={clsx('w-full', {
-                    'animate-pulse': isLoadingWorks,
-                  })}
-                >
-                  <SelectValue placeholder="Selecione a obra" />
-                </SelectTrigger>
-
-                <SelectContent position="popper" className="max-h-[200px] max-w-[380px] overflow-y-auto">
-                  {worksOnGoing.map((work) => (
-                    <SelectItem key={work.id} value={work.id}>
-                      {work.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                works={worksOnGoing.map((item) => ({
+                  id: item.id,
+                  label: item.name,
+                }))}
+              />
             )}
           />
 

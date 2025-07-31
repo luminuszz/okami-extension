@@ -7,7 +7,7 @@
     }
   },
   "description": "Runs okami work finder",
-  "version": "1.0",
+  "version": "2.5",
   "icons": {
     "16": "images/icon16.png",
     "32": "images/icon32.png",

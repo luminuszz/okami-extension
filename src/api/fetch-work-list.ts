@@ -1,5 +1,4 @@
 import {okamiHttpGateway} from '@/lib/axios.ts'
-import {localStorageKeys} from '@/lib/storage.ts'
 import {useQuery} from '@tanstack/react-query'
 import {z} from 'zod'
 
@@ -32,14 +31,6 @@ export function useFetchWorkList() {
   const query = useQuery({
     queryFn: fetchWorkList,
     queryKey: getFetchWorkListQueryKey(),
-    select: (data) => {
-      localStorage.setItem(localStorageKeys.worksOnGoingCache, JSON.stringify(query.data ?? []))
-      return data
-    },
-    placeholderData: () => {
-      const cache = localStorage.getItem(localStorageKeys.worksOnGoingCache)
-      return cache ? (JSON.parse(cache) as WorkForExtensionType[]) : []
-    },
   })
 
   return {

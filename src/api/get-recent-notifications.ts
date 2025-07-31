@@ -1,7 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
-import { z } from 'zod'
+import {useQuery} from '@tanstack/react-query'
+import {z} from 'zod'
 
-import { okamiHttpGateway } from '@/lib/axios'
+import {okamiHttpGateway} from '@/lib/axios'
 
 export const notificationSchema = z.object({
   content: z.object({
@@ -36,6 +36,7 @@ export function useGetRecentNotifications() {
   const { data: notifications, isPending: isLoading } = useQuery({
     queryKey,
     queryFn: getRecentNotifications,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
   return {
