@@ -10,18 +10,15 @@ const TokenStatus = {
 };
 
 function dispatchTokenStatusChange(status, data = {}) {
-  const event = new CustomEvent("okami:token-status-changed", {
-    detail: JSON.parse(
-      JSON.stringify({
-        status,
-        timestamp: new Date().toISOString(),
-        ...data,
-      }),
-    ),
-    bubbles: true,
-    composed: true,
-  });
-  document.dispatchEvent(event);
+  window.postMessage(
+    {
+      okami: true,
+      status,
+      timestamp: new Date().toISOString(),
+      ...data,
+    },
+    "*",
+  );
 }
 
 async function fetchTokenFromBackend() {
@@ -40,11 +37,13 @@ async function fetchTokenFromBackend() {
 
     if (response.ok) {
       const data = await response.json();
+
       if (data.refreshToken) {
         dispatchTokenStatusChange(TokenStatus.SUCCESS, {
           message: "Token recuperado via Cookie Session",
           hasToken: true,
         });
+
         saveTokenToLocalStorage(data.refreshToken);
       } else {
         dispatchTokenStatusChange(TokenStatus.ERROR, {
