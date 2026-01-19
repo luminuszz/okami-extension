@@ -1,18 +1,17 @@
-import { Loader } from 'lucide-react'
-import { useEffect } from 'react'
+import { Loader } from "lucide-react";
+import { useEffect } from "react";
 
-import { Login } from '@/pages/login.tsx'
-
-import { useAuth } from './components/auth-provider'
-import { Container } from './components/container'
-import { MarkWorkRead } from './pages/mark-work-read'
+import { useAuth } from "./components/auth-provider";
+import { Container } from "./components/container";
+import { LoginWithPlatform } from "./pages/login-with-platform";
+import { MarkWorkRead } from "./pages/mark-work-read";
 
 export function Router() {
-  const { isLoading, isLogged, checksTokenFromChromeStorage } = useAuth()
+  const { isLoading, isLogged, checksTokenFromChromeStorage } = useAuth();
 
   useEffect(() => {
-    checksTokenFromChromeStorage().then()
-  }, [checksTokenFromChromeStorage])
+    checksTokenFromChromeStorage().then();
+  }, [checksTokenFromChromeStorage]);
 
   if (isLoading) {
     return (
@@ -21,8 +20,8 @@ export function Router() {
           <Loader className="size-40 animate-spin text-muted-foreground" />
         </div>
       </Container>
-    )
+    );
   }
 
-  return isLogged ? <MarkWorkRead /> : <Login />
+  return isLogged ? <MarkWorkRead /> : <LoginWithPlatform />;
 }

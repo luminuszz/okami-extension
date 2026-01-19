@@ -1,86 +1,111 @@
-import { type ClassValue, clsx } from 'clsx'
-import Levenshtein from 'fast-levenshtein'
-import { map, reduce } from 'lodash'
-import { twMerge } from 'tailwind-merge'
+import { type ClassValue, clsx } from "clsx";
+import Levenshtein from "fast-levenshtein";
+import { map, reduce } from "lodash";
+import { twMerge } from "tailwind-merge";
 
-import { localStorageKeys } from '@/lib/storage.ts'
+import { localStorageKeys } from "@/lib/storage.ts";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 export function isRunningAsExtension(): boolean {
-  return typeof chrome !== 'undefined' && typeof chrome.runtime !== 'undefined'
+  return typeof chrome !== "undefined" && typeof chrome.runtime !== "undefined";
 }
 
 export const getCurrentTab = async (): Promise<string> => {
   return new Promise((resolve) => {
     if (!isRunningAsExtension()) {
-      return resolve('')
+      return resolve("");
     }
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs.length > 0 && tabs[0].title) {
-        resolve(tabs[0].title)
+        resolve(tabs[0].title);
       } else {
-        resolve('')
+        resolve("");
       }
-    })
-  })
-}
+    });
+  });
+};
 
 type ListValue = {
-  parsedName: string
-  originalName: string
-}
+  parsedName: string;
+  originalName: string;
+};
 
 export function search(listObj: string[], nameRef: string) {
   const list = map(listObj, (name) => ({
     originalName: name,
-    parsedName: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, ''),
-  }))
+    parsedName: name.toLowerCase().replace(/[^a-zA-Z0-9]/g, ""),
+  }));
 
   const results = reduce<ListValue, ListValue>(
     list,
     (closestName, currentName) => {
-      const currentDistance = Levenshtein.get(nameRef, currentName.parsedName)
-      const closestDistance = Levenshtein.get(nameRef, closestName.parsedName)
+      const currentDistance = Levenshtein.get(nameRef, currentName.parsedName);
+      const closestDistance = Levenshtein.get(nameRef, closestName.parsedName);
 
       closestName =
-        currentDistance < closestDistance ? currentName : closestName
+        currentDistance < closestDistance ? currentName : closestName;
 
-      return closestName
+      return closestName;
     },
-    { parsedName: '', originalName: '' },
-  )
+    { parsedName: "", originalName: "" },
+  );
 
-  return results.originalName
+  return results.originalName;
 }
 
 export function hasExceededMaxFractionDigits(
   num: number,
   maxFractionDigits: number,
 ): boolean {
-  const fractionPart = num.toString().split('.')[1]
+  const fractionPart = num.toString().split(".")[1];
 
-  return !!fractionPart && fractionPart.length > maxFractionDigits
+  return !!fractionPart && fractionPart.length > maxFractionDigits;
 }
 
 export function listenForRefreshTokenByOkamiPlatform(
   handler: (refreshToken: string | null) => void,
 ) {
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName === 'local') {
+    if (areaName === "local") {
       for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
         if (key === localStorageKeys.refreshToken) {
-          console.log(`Refresh token changed.`)
-          console.log(`Old value: `, oldValue)
-          console.log(`New value: `, newValue)
-          handler(newValue)
+          console.log(`Refresh token changed.`);
+          console.log(`Old value: `, oldValue);
+          console.log(`New value: `, newValue);
+          handler(newValue);
         }
       }
     }
-  })
+  });
 
-  return () => {}
+  return () => {};
+}
+
+export function normalizeSearchFilter(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+export function getSearchScore(value: string, search: string): number {
+  const normalizedValue = normalizeSearchFilter(value);
+  const normalizedFilterSearch = normalizeSearchFilter(search);
+
+  let count = 0;
+
+  const normalizedSeachSplited = normalizedFilterSearch.split(/\s+/);
+
+  for (const w of normalizedSeachSplited) {
+    if (normalizedValue.includes(w)) count++;
+  }
+
+  return count / normalizedSeachSplited.length;
 }

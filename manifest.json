@@ -22,12 +22,12 @@
   "content_scripts": [
     {
       "matches": [
-        "https://okami.daviribeiro.com/*",
+        "https://app.myokami.xyz/*",
         "http://localhost:5173/*",
-        "https://app.myokami.xyz/*"
+        "http://127.0.0.1:5173/*"
       ],
-      "js": ["token-script.js"],
-      "all_frames": true
+      "js": ["content-script.js"],
+      "run_at": "document_idle"
     }
   ]
 }

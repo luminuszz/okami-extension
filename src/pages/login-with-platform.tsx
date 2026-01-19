@@ -1,13 +1,13 @@
-import { Container } from '@/components/container'
-import { Logo } from '@/components/logo.tsx'
-import { Button } from '@/components/ui/button'
+import { Container } from "@/components/container";
+import { Logo } from "@/components/logo.tsx";
+import { Button } from "@/components/ui/button";
 
 export function LoginWithPlatform() {
   async function handleRedirectToOkami() {
     await chrome.tabs.create({
-      url: `${import.meta.env.VITE_OKAMI_PTATFORM_URL}/auth/auth-extension`,
+      url: `${import.meta.env.VITE_OKAMI_PTATFORM_URL}/extension/auth`,
       active: true,
-    })
+    });
   }
 
   return (
@@ -19,5 +19,5 @@ export function LoginWithPlatform() {
         <Button onClick={handleRedirectToOkami}>Entrar com Okami</Button>
       </section>
     </Container>
-  )
+  );
 }
