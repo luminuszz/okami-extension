@@ -75,21 +75,7 @@ function saveTokenToLocalStorage(token) {
   });
 }
 
-async function initializeToken() {
-  chrome.storage.local.get([refreshTokenStorageKey], (result) => {
-    if (result[refreshTokenStorageKey]) {
-      dispatchTokenStatusChange(TokenStatus.SUCCESS, {
-        message: "Token já existe no storage",
-        hasToken: true,
-        fromCache: true,
-      });
-    } else {
-      fetchTokenFromBackend();
-    }
-  });
-}
-
 // Executa apenas nos domínios permitidos
 if (["app.myokami.xyz", "localhost"].includes(window.location.hostname)) {
-  initializeToken();
+  fetchTokenFromBackend();
 }
