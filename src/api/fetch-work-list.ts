@@ -1,6 +1,6 @@
-import {okamiHttpGateway} from '@/lib/axios.ts'
-import {useQuery} from '@tanstack/react-query'
-import {z} from 'zod'
+import { okamiHttpGateway } from '@/lib/axios.ts'
+import { useQuery } from '@tanstack/react-query'
+import { z } from 'zod'
 
 const workForExtensionSchema = z.object({
   id: z.string(),
@@ -13,6 +13,7 @@ const workForExtensionSchema = z.object({
   category: z.string(),
   alternativeName: z.string().optional().nullable(),
   imageUrl: z.string().optional().nullable(),
+  slug: z.string(),
 })
 
 const workListSchema = z.array(workForExtensionSchema)

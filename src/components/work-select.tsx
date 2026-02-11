@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button.tsx";
+import { Button } from '@/components/ui/button.tsx'
 import {
   Command,
   CommandEmpty,
@@ -6,54 +6,39 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { cn, getSearchScore } from "@/lib/utils.ts";
-import { find } from "lodash";
-import { Check, ChevronDown, ChevronUp } from "lucide-react";
-import { useState } from "react";
+} from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { cn, getSearchScore } from '@/lib/utils.ts'
+import { find } from 'lodash'
+import { Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState } from 'react'
 
 export interface WorkSelect {
-  value: string;
-  onSelected: (value: string) => void;
-  works: { label: string; id: string }[];
+  value: string
+  onSelected: (value: string) => void
+  works: { label: string; id: string; slug: string }[]
 }
 
 export function WorkSelect({ works, onSelected, value }: WorkSelect) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(false)
 
   function handleSelected(currentValue: string) {
-    const work = find(works, { label: currentValue });
+    const work = find(works, { slug: currentValue })
 
     if (work) {
-      onSelected(work.id);
-      setOpen(false);
+      onSelected(work.id)
+      setOpen(false)
     }
   }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className="justify-between"
-        >
+        <Button variant="outline" role="combobox" aria-expanded={open} className="justify-between">
           <p className="truncate overflow-hidden whitespace-nowrap">
-            {value
-              ? works.find((work) => work.id === value)?.label
-              : "Pesquise a obra..."}
+            {value ? works.find((work) => work.id === value)?.label : 'Pesquise a obra...'}
           </p>
-          {open ? (
-            <ChevronUp className="opacity-50" />
-          ) : (
-            <ChevronDown className="opacity-50" />
-          )}
+          {open ? <ChevronUp className="opacity-50" /> : <ChevronDown className="opacity-50" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="p-0">
@@ -63,18 +48,9 @@ export function WorkSelect({ works, onSelected, value }: WorkSelect) {
             <CommandEmpty>No framework found.</CommandEmpty>
             <CommandGroup>
               {works.map((work) => (
-                <CommandItem
-                  key={work.id}
-                  value={work.label}
-                  onSelect={handleSelected}
-                >
+                <CommandItem key={work.id} value={work.slug} onSelect={handleSelected}>
                   {work.label}
-                  <Check
-                    className={cn(
-                      "ml-auto",
-                      value === work.id ? "opacity-100" : "opacity-0",
-                    )}
-                  />
+                  <Check className={cn('ml-auto', value === work.id ? 'opacity-100' : 'opacity-0')} />
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -82,5 +58,5 @@ export function WorkSelect({ works, onSelected, value }: WorkSelect) {
         </Command>
       </PopoverContent>
     </Popover>
-  );
+  )
 }

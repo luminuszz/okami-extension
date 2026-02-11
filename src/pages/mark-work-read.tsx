@@ -1,22 +1,22 @@
-import {zodResolver} from '@hookform/resolvers/zod'
-import {find} from 'lodash'
-import {useCallback} from 'react'
-import {Controller, useForm} from 'react-hook-form'
-import {z} from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { find } from 'lodash'
+import { useCallback } from 'react'
+import { Controller, useForm } from 'react-hook-form'
+import { z } from 'zod'
 
-import {useFetchWorkList, WorkForExtensionType} from '@/api/fetch-work-list.ts'
-import {useMarkWorkAsRead} from '@/api/mark-work-as-read.ts'
-import {useUpdateWorkChapter} from '@/api/update-work-chapter'
-import {useAuth} from '@/components/auth-provider'
-import {Container} from '@/components/container'
-import {useToast} from '@/components/toast-provider.tsx'
-import {Button} from '@/components/ui/button'
-import {Input} from '@/components/ui/input.tsx'
-import {Label} from '@/components/ui/label'
-import {WorkSelect} from '@/components/work-select.tsx'
-import {useFindWorkByTabTitle} from '@/hooks/useFindWorkByTabTitle.ts'
-import {hasExceededMaxFractionDigits} from '@/lib/utils'
-import {Loader2} from 'lucide-react'
+import { WorkForExtensionType, useFetchWorkList } from '@/api/fetch-work-list.ts'
+import { useMarkWorkAsRead } from '@/api/mark-work-as-read.ts'
+import { useUpdateWorkChapter } from '@/api/update-work-chapter'
+import { useAuth } from '@/components/auth-provider'
+import { Container } from '@/components/container'
+import { useToast } from '@/components/toast-provider.tsx'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input.tsx'
+import { Label } from '@/components/ui/label'
+import { WorkSelect } from '@/components/work-select.tsx'
+import { useFindWorkByTabTitle } from '@/hooks/useFindWorkByTabTitle.ts'
+import { hasExceededMaxFractionDigits } from '@/lib/utils'
+import { Loader2 } from 'lucide-react'
 
 const chapterNumberSchema = z.coerce
   .number({
@@ -138,6 +138,7 @@ export function MarkWorkRead() {
                 works={worksOnGoing.map((item) => ({
                   id: item.id,
                   label: item.name,
+                  slug: item.slug,
                 }))}
               />
             )}
