@@ -9,17 +9,27 @@ const TokenStatus = {
   SAVED: "SAVED",
 };
 
+let lastStatus = null;
+
 function dispatchTokenStatusChange(status, data = {}) {
-  window.postMessage(
-    {
-      okami: true,
-      status,
-      timestamp: new Date().toISOString(),
-      ...data,
-    },
-    "*",
-  );
+  lastStatus = {
+    okami: true,
+    status,
+    timestamp: new Date().toISOString(),
+    ...data,
+  };
+  window.postMessage(lastStatus, window.location.origin);
 }
+
+// The page posts READY once its listener is mounted; replay the last status
+// so early messages (FETCHING) are not lost to the mount race.
+window.addEventListener("message", (event) => {
+  if (event.source !== window) return;
+  if (event.origin !== window.location.origin) return;
+  if (event.data?.okami && event.data.status === "READY" && lastStatus) {
+    window.postMessage(lastStatus, window.location.origin);
+  }
+});
 
 async function fetchTokenFromBackend() {
   try {
@@ -75,7 +85,11 @@ function saveTokenToLocalStorage(token) {
   });
 }
 
-// Executa apenas nos domínios permitidos
-if (["app.myokami.xyz", "localhost"].includes(window.location.hostname)) {
+// Executa apenas nos domínios permitidos (alinhado ao manifest content_scripts.matches)
+if (
+  ["app.myokami.xyz", "localhost", "127.0.0.1"].includes(
+    window.location.hostname,
+  )
+) {
   fetchTokenFromBackend();
 }

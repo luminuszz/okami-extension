@@ -38,6 +38,9 @@ export interface GetTokensFromStorageResult {
   token: string | null
 }
 
+// ponytail: two-tier on purpose. chrome.storage.local is the durable store the
+// content script writes cross-context; localStorage is the sync cache the axios
+// request interceptor reads. Collapse to one source only if axios goes async.
 export const getTokensByExtensionStorage = (): GetTokensFromStorageResult => {
   return {
     refreshToken: localStorage.getItem(localStorageKeys.refreshToken) || null,

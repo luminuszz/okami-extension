@@ -2,7 +2,7 @@ import {createContext, ReactNode, useCallback, useContext, useEffect, useState} 
 
 import {createSession} from '@/api/create-session'
 import {eventBridge} from '@/lib/events'
-import {getTokenFormOkamiIntegrationStorage, getTokensByExtensionStorage, setTokensInStorage,} from '@/lib/storage'
+import {getTokenFormOkamiIntegrationStorage, getTokensByExtensionStorage, localStorageKeys, setTokensInStorage,} from '@/lib/storage'
 
 export interface MarkLoginInput {
   email: string
@@ -97,6 +97,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
       unsubscribe()
     }
   }, [])
+
+  // Content script writes the token to chrome.storage.local from the web page;
+  // react to it so an already-open popup logs in without being reopened.
+  useEffect(() => {
+    const onChanged = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: string,
+    ) => {
+      if (areaName === 'local' && changes[localStorageKeys.refreshToken]) {
+        checksTokenFromChromeStorage()
+      }
+    }
+
+    chrome.storage.onChanged.addListener(onChanged)
+
+    return () => {
+      chrome.storage.onChanged.removeListener(onChanged)
+    }
+  }, [checksTokenFromChromeStorage])
 
   return (
     <AuthContext.Provider
