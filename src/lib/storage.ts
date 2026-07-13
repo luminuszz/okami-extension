@@ -59,8 +59,16 @@ export const getTokenFormOkamiIntegrationStorage =
     })
   }
 
+// Must clear every store that holds a token. Leaving the chrome.storage.local
+// copy behind makes the popup re-read the dead token on reopen and log back in,
+// 401, log out again — a loop the user cannot escape.
 export const deleteTokensFromStorage = () => {
   localStorage.removeItem(localStorageKeys.refreshToken)
+  localStorage.removeItem(localStorageKeys.token)
+
+  if (typeof chrome !== 'undefined' && chrome.storage?.local) {
+    chrome.storage.local.remove(localStorageKeys.refreshToken)
+  }
 }
 
 export const setTokensInStorage = (refreshToken: string) => {

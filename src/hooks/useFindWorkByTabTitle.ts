@@ -10,25 +10,24 @@ export function useFindWorkByTabTitle(works: WorkForExtensionType[]) {
 
   useEffect(() => {
     if (!currentTabTitle) return
-    ;(async () => {
-      const allWorksNameAndAlternativeNames = flatMap(works, (work) => [
-        work.name,
-        work.alternativeName ?? '',
-      ])
 
-      const firsTWorkMatchToTitle = search(allWorksNameAndAlternativeNames, currentTabTitle)
+    const allWorksNameAndAlternativeNames = flatMap(works, (work) => [
+      work.name,
+      work.alternativeName ?? '',
+    ])
 
-      const foundWork = find(works, (work) =>
-        [work.name, work.alternativeName].includes(firsTWorkMatchToTitle),
-      )
+    const firstWorkMatchToTitle = search(allWorksNameAndAlternativeNames, currentTabTitle)
 
-      if (!foundWork) {
-        console.warn(`No work found for the current tab title: "${currentTabTitle}"`)
-        return
-      }
+    if (!firstWorkMatchToTitle) {
+      setWork(null)
+      return
+    }
 
-      setWork(foundWork)
-    })()
+    const foundWork = find(works, (work) =>
+      [work.name, work.alternativeName].includes(firstWorkMatchToTitle),
+    )
+
+    setWork(foundWork ?? null)
   }, [currentTabTitle, works])
 
   return work

@@ -1,4 +1,4 @@
-import {getFetchWorksWithFilterQueryKey, type WorkType} from '@/api/fetch-for-works-with-filter.ts'
+import {getFetchWorkListQueryKey, type WorkForExtensionType} from '@/api/fetch-work-list.ts'
 import {useUpdateQueryCache} from '@/hooks/useUpdateQueryCache.ts'
 import {okamiHttpGateway} from '@/lib/axios'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
@@ -14,16 +14,16 @@ export async function updateWorkChapterCall({ chapter, workId }: UpdateWorkInput
   })
 }
 
-const workListQueryKey = getFetchWorksWithFilterQueryKey()
+// the key the UI actually reads (useFetchWorkList); the old one was never subscribed
+const workListQueryKey = getFetchWorkListQueryKey()
 
 export function useUpdateWorkChapter() {
-  const updateQueryCache = useUpdateQueryCache<WorkType[]>(workListQueryKey)
+  const updateQueryCache = useUpdateQueryCache<WorkForExtensionType[]>(workListQueryKey)
   const client = useQueryClient()
 
   const { isPending, mutateAsync } = useMutation({
     mutationKey: ['updateWorkChapter'],
     mutationFn: updateWorkChapterCall,
-    retry: 3,
     onMutate({ workId, chapter }) {
       void client.cancelQueries({ queryKey: workListQueryKey })
       return updateQueryCache(

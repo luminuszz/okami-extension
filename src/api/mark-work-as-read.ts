@@ -1,5 +1,4 @@
-import {getFetchWorksWithFilterQueryKey, type WorkType} from '@/api/fetch-for-works-with-filter.ts'
-import {getFetchWorkListQueryKey} from '@/api/fetch-work-list.ts'
+import {getFetchWorkListQueryKey, type WorkForExtensionType} from '@/api/fetch-work-list.ts'
 import {useMarkNotificationAsRead} from '@/api/mark-notification-as-read.ts'
 import {useUpdateQueryCache} from '@/hooks/useUpdateQueryCache.ts'
 import {okamiHttpGateway} from '@/lib/axios'
@@ -26,13 +25,14 @@ const workListQueryKey = getFetchWorkListQueryKey()
 export function useMarkWorkAsRead() {
     const {markAsRead: markNotificationAsRead} = useMarkNotificationAsRead()
 
-    const updateQueryCache = useUpdateQueryCache<WorkType[]>(getFetchWorksWithFilterQueryKey())
+    // must be the key the UI actually reads (useFetchWorkList), otherwise the
+    // optimistic write and its rollback land in a cache nobody renders
+    const updateQueryCache = useUpdateQueryCache<WorkForExtensionType[]>(workListQueryKey)
     const client = useQueryClient()
 
     const {mutateAsync, isPending} = useMutation({
         mutationKey: ['markWorkAsRead'],
         mutationFn: markWorkAsRead,
-        retry: 3,
         onMutate({chapter, workId}) {
             void client.cancelQueries({queryKey: workListQueryKey})
           

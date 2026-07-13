@@ -1,19 +1,14 @@
 import {createContext, ReactNode, useCallback, useContext, useEffect, useState} from 'react'
 
-import {createSession} from '@/api/create-session'
 import {eventBridge} from '@/lib/events'
-import {getTokenFormOkamiIntegrationStorage, getTokensByExtensionStorage, localStorageKeys, setTokensInStorage,} from '@/lib/storage'
-
-export interface MarkLoginInput {
-  email: string
-  password: string
-}
+import {queryClient, queryClientPersister} from '@/lib/react-query'
+import {deleteTokensFromStorage, getTokenFormOkamiIntegrationStorage, getTokensByExtensionStorage, localStorageKeys, setTokensInStorage,} from '@/lib/storage'
 
 interface AuthContextProps {
   isLogged: boolean
   isLoading: boolean
   setIsLogged: (isLogged: boolean) => void
-  makeLogin: (values: MarkLoginInput) => void
+  logout: () => Promise<void>
   checksTokenFromChromeStorage: () => Promise<void>
 }
 
@@ -26,41 +21,6 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [isLogged, setIsLogged] = useState(false)
-
-  useEffect(() => {
-    setIsLoading(true)
-
-    const { refreshToken } = getTokensByExtensionStorage()
-
-    setIsLogged(!!refreshToken)
-
-    setIsLoading(false)
-  }, [])
-
-  const makeLogin = useCallback(
-    async (values: MarkLoginInput) => {
-      try {
-        setIsLoading(true)
-
-        const { refreshToken } = await createSession({
-          email: values.email,
-          password: values.password,
-        })
-
-        setTokensInStorage(refreshToken)
-
-        setIsLogged(true)
-      } catch (e) {
-        console.log({ e })
-
-        alert('Erro ao fazer login')
-      } finally {
-        setIsLoading(false)
-      }
-    },
-
-    [setIsLoading, setIsLogged],
-  )
 
   const checksTokenFromChromeStorage = useCallback(async () => {
     try {
@@ -76,17 +36,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const refreshTokenFromStorage = await getTokenFormOkamiIntegrationStorage()
 
       if (refreshTokenFromStorage) {
-        console.log('refreshTokenFromStorage', refreshTokenFromStorage)
         setTokensInStorage(refreshTokenFromStorage)
         setIsLogged(true)
       }
-    } catch (e) {
-      console.log(e)
+    } catch {
       setIsLogged(false)
     } finally {
       setIsLoading(false)
     }
   }, [setIsLoading, setIsLogged])
+
+  // The cache is persisted to localStorage, so it has to be dropped too —
+  // otherwise the next account to open the popup sees the previous one's works.
+  const logout = useCallback(async () => {
+    deleteTokensFromStorage()
+    setIsLogged(false)
+
+    queryClient.clear()
+    await queryClientPersister.removeClient()
+  }, [setIsLogged])
 
   useEffect(() => {
     const unsubscribe = eventBridge.subscribe('user.isUnauthenticated', () => {
@@ -123,7 +91,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isLogged,
         isLoading,
         setIsLogged,
-        makeLogin,
+        logout,
         checksTokenFromChromeStorage,
       }}
     >
